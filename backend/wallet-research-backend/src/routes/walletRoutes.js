@@ -1,0 +1,12 @@
+const router = require("express").Router();
+const { protect, requireRole } = require("../middleware/authMiddleware");
+const { listWallets, getWallet, createWallet, manager1Decision, submitStage2, manager2Decision, addNote } = require("../controllers/walletController");
+router.use(protect);
+router.get("/", listWallets);
+router.post("/", requireRole("user"), createWallet);
+router.get("/:id", getWallet);
+router.post("/:id/stage1-decision", requireRole("manager1"), manager1Decision);
+router.post("/:id/stage2-submit", requireRole("user"), submitStage2);
+router.post("/:id/stage2-decision", requireRole("manager2"), manager2Decision);
+router.post("/:id/notes", addNote);
+module.exports = router;
