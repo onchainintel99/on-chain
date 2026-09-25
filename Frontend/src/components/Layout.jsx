@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+
 import {
   NavLink,
   Outlet,
   useNavigate,
-} from 'react-router-dom';
+} from "react-router-dom";
 
-import { useData } from '../lib/store';
+import { useData } from "../lib/store";
+import logo from "../assets/logo-icon.png";
 
 const ROLE_LABELS = {
-  user: 'User',
-  manager1: 'Manager Stage 1',
-  manager2: 'Manager Stage 2',
-  admin: 'Administrator',
+  user: "User",
+  manager1: "Manager 1",
+  manager2: "Manager 2",
+  admin: "Administrator",
 };
 
 export default function Layout() {
@@ -25,302 +27,239 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
 
-
   const role = currentUser?.role;
-
 
   const getInitials = () => {
     if (!currentUser?.name) {
-      return 'U';
+      return "U";
     }
 
     return currentUser.name
-      .split(' ')
+      .split(" ")
       .map((part) => part[0])
-      .join('')
+      .join("")
       .slice(0, 2)
       .toUpperCase();
   };
 
+  /*
+   * =========================================================
+   * COMMON NAVIGATION
+   *
+   * EVERY ROLE GETS:
+   * Dashboard
+   * Pipeline
+   * All Wallets
+   * =========================================================
+   */
 
-  const navigation = [];
+  const navigation = [
+    {
+      to: "/",
+      label: "Dashboard",
+      icon: "⌂",
+      end: true,
+    },
 
+    {
+      to: "/pipeline",
+      label: "Pipeline",
+      icon: "⇢",
+    },
+
+    {
+      to: "/wallets",
+      label: "All Wallets",
+      icon: "◈",
+    },
+  ];
 
   /*
-   * USER NAVIGATION
+   * =========================================================
+   * ADD WALLET
+   *
+   * ONLY NORMAL USER
+   *
+   * Manager 1 ❌
+   * Manager 2 ❌
+   * Admin ❌
+   * =========================================================
    */
-  if (role === 'user') {
-    navigation.push(
-      {
-        to: '/',
-        label: 'Dashboard',
-        icon: '⌂',
-        end: true,
-      },
-      {
-        to: '/wallets',
-        label: 'My Wallets',
-        icon: '◈',
-      },
-      {
-        to: '/create-wallet',
-        label: 'Create Wallet',
-        icon: '+',
-      }
-    );
+
+  if (role === "user") {
+    navigation.push({
+      to: "/create-wallet",
+      label: "Add Wallet",
+      icon: "+",
+    });
   }
 
-
   /*
-   * MANAGER STAGE 1
-   */
-  if (role === 'manager1') {
-    navigation.push(
-      {
-        to: '/',
-        label: 'Dashboard',
-        icon: '⌂',
-        end: true,
-      },
-      {
-        to: '/manager/stage-1',
-        label: 'Stage 1 Queue',
-        icon: '◈',
-      },
-      {
-        to: '/wallets',
-        label: 'Wallet Pipeline',
-        icon: '▤',
-      }
-    );
-  }
-
-
-  /*
-   * MANAGER STAGE 2
-   */
-  if (role === 'manager2') {
-    navigation.push(
-      {
-        to: '/',
-        label: 'Dashboard',
-        icon: '⌂',
-        end: true,
-      },
-      {
-        to: '/manager/stage-2',
-        label: 'Stage 2 Queue',
-        icon: '◈',
-      },
-      {
-        to: '/wallets',
-        label: 'Wallet Pipeline',
-        icon: '▤',
-      }
-    );
-  }
-
-
-  /*
+   * =========================================================
    * ADMIN
+   * =========================================================
    */
-  if (role === 'admin') {
-    navigation.push(
-      {
-        to: '/',
-        label: 'Dashboard',
-        icon: '⌂',
-        end: true,
-      },
-      {
-        to: '/wallets',
-        label: 'Wallet Pipeline',
-        icon: '▤',
-      },
-      {
-        to: '/admin',
-        label: 'Admin Dashboard',
-        icon: '◉',
-      }
-    );
-  }
 
+  if (role === "admin") {
+    navigation.push({
+      to: "/admin",
+      label: "Admin",
+      icon: "◆",
+    });
+  }
 
   function handleLogout() {
     logout();
 
-    navigate('/login', {
+    navigate("/login", {
       replace: true,
     });
   }
 
-
   return (
-    <div className="shell">
+    <div className="app-shell">
 
-      {/* ================================================ */}
-      {/* SIDEBAR */}
-      {/* ================================================ */}
+      {/* =====================================================
+          MOBILE OVERLAY
+      ===================================================== */}
+
+      {sidebarOpen && (
+        <button
+          className="sidebar-overlay"
+          aria-label="Close menu"
+          onClick={() =>
+            setSidebarOpen(false)
+          }
+        />
+      )}
+
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
 
       <aside
-        className={`shell__sidebar ${
-          sidebarOpen ? 'is-open' : ''
+        className={`sidebar ${
+          sidebarOpen
+            ? "sidebar--open"
+            : ""
         }`}
       >
 
         {/* BRAND */}
 
-        <div className="brand">
+        <div className="sidebar__brand">
 
-          <div className="brand__mark">
-            ◆
+          <div className="sidebar__logo">
+            <img src={logo} alt="Onchain Intelligence" />
           </div>
 
-          <div className="brand__text">
-
-            <span className="brand__name">
+          <div>
+            <div className="sidebar__brand-name">
               Onchain Intelligence
-            </span>
+            </div>
 
-            <span className="brand__sub">
-              Wallet Management
-            </span>
-
+            <div className="sidebar__brand-sub">
+              Wallet Research
+            </div>
           </div>
 
         </div>
 
+        {/* ROLE */}
+
+        <div className="sidebar__role">
+          {ROLE_LABELS[role] || role}
+        </div>
 
         {/* NAVIGATION */}
 
-        <nav className="side-nav">
-
-          <div className="side-nav__section-title">
-            Workspace
-          </div>
+        <nav className="sidebar__nav">
 
           {navigation.map((item) => (
-
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
+              className={({ isActive }) =>
+                `sidebar__link ${
+                  isActive
+                    ? "sidebar__link--active"
+                    : ""
+                }`
+              }
               onClick={() =>
                 setSidebarOpen(false)
               }
-              className={({ isActive }) =>
-                `side-nav__link ${
-                  isActive
-                    ? 'is-active'
-                    : ''
-                }`
-              }
             >
-
-              <span className="side-nav__icon">
+              <span className="sidebar__link-icon">
                 {item.icon}
               </span>
 
               <span>
                 {item.label}
               </span>
-
             </NavLink>
-
           ))}
 
         </nav>
 
+        {/* USER */}
 
-        {/* USER AREA */}
+        <div className="sidebar__footer">
 
-        <div className="side-nav__footer">
+          <div className="sidebar-user">
 
-          <div className="user-chip">
-
-            <div className="user-chip__initials">
+            <div className="sidebar-user__avatar">
               {getInitials()}
             </div>
 
-            <div className="user-chip__meta">
+            <div className="sidebar-user__info">
 
-              <span className="user-chip__name">
+              <strong>
                 {currentUser?.name}
-              </span>
+              </strong>
 
-              <span className="user-chip__role">
-                {ROLE_LABELS[role]}
+              <span>
+                {currentUser?.email}
               </span>
 
             </div>
 
           </div>
 
-
           <button
-            className="btn btn--ghost btn--full"
+            type="button"
+            className="btn btn--ghost sidebar-logout"
             onClick={handleLogout}
           >
-            Log out
+            Logout
           </button>
 
         </div>
 
       </aside>
 
+      {/* =====================================================
+          MAIN
+      ===================================================== */}
 
-      {/* ================================================ */}
-      {/* MAIN */}
-      {/* ================================================ */}
+      <main className="shell">
 
-      <div className="shell__main">
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          onClick={() =>
+            setSidebarOpen(true)
+          }
+        >
+          ☰
+        </button>
 
-        {/* TOP BAR */}
-
-        <header className="topbar">
-
-          <button
-            className="topbar__menu-btn"
-            onClick={() =>
-              setSidebarOpen(
-                (value) => !value
-              )
-            }
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-
-
-          <div className="topbar__right">
-
-            <div className="topbar__status">
-
-              <span className="live-dot" />
-
-              Live approval system
-
-            </div>
-
-            <div className="topbar__role">
-              {ROLE_LABELS[role]}
-            </div>
-
-          </div>
-
-        </header>
-
-
-        {/* CONTENT */}
-
-        <main className="shell__content">
-
+        <div className="shell__content">
           <Outlet />
+        </div>
 
-        </main>
-
-      </div>
+      </main>
 
     </div>
   );

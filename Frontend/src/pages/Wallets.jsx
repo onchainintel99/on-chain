@@ -1,348 +1,545 @@
 import React, {
   useEffect,
-  useState
-} from 'react';
+  useMemo,
+  useState,
+} from "react";
 
-import { Link } from 'react-router-dom';
+import {
+  Link,
+  useSearchParams,
+} from "react-router-dom";
 
-import { useData } from '../lib/store';
+import {
+  useData,
+} from "../lib/store";
 
-import Badge from '../components/Badge';
+import Badge
+  from "../components/Badge";
 
-import { formatDateTime } from '../lib/utils';
+import {
+  formatDateTime,
+} from "../lib/utils";
+
+
+const STATUS_OPTIONS = [
+  "All",
+  "Pending Stage 1",
+  "Pending Stage 2",
+  "Pending Stage 3",
+  "Successful",
+  "Failed",
+];
 
 
 export default function Wallets() {
-
   const {
     getWallets,
-    currentUser
+    currentUser,
   } = useData();
 
 
-  const [wallets, setWallets] = useState([]);
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
 
-  const [search, setSearch] = useState('');
+
+  const initialStatus =
+    searchParams.get(
+      "status"
+    ) || "All";
 
 
-  /*
-   * Load wallets
-   */
-  useEffect(() => {
+  const [
+    status,
+    setStatus,
+  ] = useState(
+    STATUS_OPTIONS.includes(
+      initialStatus
+    )
+      ? initialStatus
+      : "All"
+  );
 
-    async function loadWallets() {
 
-      try {
+  const [
+    wallets,
+    setWallets,
+  ] = useState([]);
 
-        const response =
-          await getWallets(
-            currentUser.role === 'user'
-              ? 'mine=true'
-              : ''
-          );
 
-        setWallets(
-          response.wallets || []
+  const [
+    search,
+    setSearch,
+  ] = useState("");
+
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+
+  async function load() {
+    try {
+      setError("");
+      setLoading(true);
+
+
+      const params =
+        new URLSearchParams();
+
+
+      if (
+        status !== "All"
+      ) {
+        params.set(
+          "status",
+          status
         );
-
-      } catch (error) {
-
-        console.error(
-          'Wallet loading error:',
-          error
-        );
-
       }
 
+
+      if (
+        search.trim()
+      ) {
+        params.set(
+          "search",
+          search.trim()
+        );
+      }
+
+
+      params.set(
+        "limit",
+        "200"
+      );
+
+
+      const response =
+        await getWallets(
+          params.toString()
+        );
+
+
+      setWallets(
+        response.wallets ||
+          []
+      );
+    } catch (err) {
+      setError(
+        err.message
+      );
+    } finally {
+      setLoading(false);
     }
+  }
 
 
-    loadWallets();
+  useEffect(() => {
+    load();
 
 
-    /*
-     * Refresh every 5 seconds
-     *
-     * This is useful because Manager Stage 1
-     * may approve a wallet while the user
-     * is still on this page.
-     */
     const interval =
       setInterval(
-        loadWallets,
+        load,
         5000
       );
 
 
     return () =>
-      clearInterval(interval);
-
-  }, [currentUser]);
-
-
-  /*
-   * Search
-   */
-  const filteredWallets =
-    wallets.filter((wallet) => {
-
-      const text = `
-        ${wallet.coinName}
-        ${wallet.tradeId}
-        ${wallet.userName}
-      `.toLowerCase();
-
-
-      return text.includes(
-        search.toLowerCase()
+      clearInterval(
+        interval
       );
+  }, [
+    status,
+    search,
+  ]);
 
-    });
+
+  function changeStatus(
+    value
+  ) {
+    setStatus(value);
 
 
-  /*
-   * Check whether user needs to
-   * enter CP + SP.
-   */
-  function needsStage2Details(wallet) {
-
-    return (
-      currentUser.role === 'user' &&
-      wallet.status === 'Pending Stage 2' &&
-      wallet.costPrice == null
-    );
-
+    if (
+      value === "All"
+    ) {
+      setSearchParams(
+        {}
+      );
+    } else {
+      setSearchParams({
+        status: value,
+      });
+    }
   }
 
 
-  return (
+  const title =
+    status === "All"
+      ? "Wallet Pipeline"
+      : status;
 
+
+  return (
     <div className="page">
 
-
-      {/* HEADER */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <div className="page__header">
 
         <div>
 
           <h1 className="page__title">
-
-            {currentUser.role === 'user'
-              ? 'My wallets'
-              : 'Wallet pipeline'}
-
+            {title}
           </h1>
 
-
           <p className="page__subtitle">
-
-            {currentUser.role === 'user'
-              ? 'Track all your wallet requests and approval status.'
-              : 'All wallet requests currently visible to your role.'}
-
+            All wallets available to{" "}
+            {currentUser?.role ===
+            "user"
+              ? "you"
+              : "your role"}{" "}
+            in the approval pipeline.
           </p>
 
         </div>
 
 
-        {/* User can create unlimited wallets */}
-
-        {currentUser.role === 'user' && (
-
+        {currentUser?.role === "user" && (
           <Link
             to="/create-wallet"
             className="btn btn--primary"
           >
-            + Create wallet
+            + Add Wallet
           </Link>
-
         )}
 
       </div>
 
 
-      {/* SEARCH */}
+      {/* =================================================
+          PIPELINE NAV
+      ================================================= */}
 
-      <div className="toolbar">
+      <section className="panel">
 
-        <input
-          className="search-input"
-          placeholder="Search coin, trade ID or user..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-        />
+        <div className="pipeline pipeline--compact">
 
-      </div>
+          {STATUS_OPTIONS.map(
+            (
+              item,
+              index
+            ) => {
 
-
-      {/* TABLE */}
-
-      <div className="table-wrap">
-
-        <table className="data-table">
-
-
-          <thead>
-
-            <tr>
-
-              <th>
-                Coin
-              </th>
-
-              <th>
-                Trade ID
-              </th>
-
-              <th>
-                User
-              </th>
-
-              <th>
-                Stage
-              </th>
-
-              <th>
-                Status
-              </th>
-
-              <th>
-                Updated
-              </th>
-
-              <th>
-                Action
-              </th>
-
-            </tr>
-
-          </thead>
+              const label =
+                item === "All"
+                  ? "All"
+                  : item.replace(
+                      "Pending ",
+                      ""
+                    );
 
 
-          <tbody>
+              return (
+                <React.Fragment
+                  key={item}
+                >
+
+                  <button
+                    type="button"
+                    className={`pipeline-filter ${
+                      status === item
+                        ? "pipeline-filter--active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      changeStatus(
+                        item
+                      )
+                    }
+                  >
+                    {label}
+                  </button>
 
 
-            {filteredWallets.map(
-              (wallet) => {
+                  {index <
+                    STATUS_OPTIONS.length -
+                      1 && (
+                    <span className="pipeline-arrow">
+                      →
+                    </span>
+                  )}
 
-                const stage2Details =
-                  needsStage2Details(
-                    wallet
-                  );
+                </React.Fragment>
+              );
+            }
+          )}
 
+        </div>
 
-                return (
-
-                  <tr key={wallet.id}>
-
-
-                    {/* Coin */}
-
-                    <td>
-                      {wallet.coinName}
-                    </td>
+      </section>
 
 
-                    {/* Trade ID */}
+      {/* =================================================
+          SEARCH
+      ================================================= */}
 
-                    <td className="mono-cell">
-                      {wallet.tradeId}
-                    </td>
+      <section className="panel">
 
+        <div className="wallet-toolbar">
 
-                    {/* User */}
-
-                    <td>
-                      {wallet.userName}
-                    </td>
-
-
-                    {/* Stage */}
-
-                    <td>
-                      Stage {wallet.stage}
-                    </td>
-
-
-                    {/* Status */}
-
-                    <td>
-
-                      <Badge
-                        status={wallet.status}
-                      />
-
-                    </td>
+          <input
+            className="field__input"
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            placeholder="Search coin name or Trade ID..."
+          />
 
 
-                    {/* Updated */}
+          <select
+            className="field__input"
+            value={status}
+            onChange={(e) =>
+              changeStatus(
+                e.target.value
+              )
+            }
+          >
 
-                    <td>
-                      {formatDateTime(
-                        wallet.lastUpdated
-                      )}
-                    </td>
+            {STATUS_OPTIONS.map(
+              (item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  {item}
+                </option>
+              )
+            )}
+
+          </select>
+
+        </div>
+
+      </section>
 
 
-                    {/* ACTION */}
+      {/* =================================================
+          ERROR
+      ================================================= */}
 
-                    <td>
+      {error && (
+        <p className="form-error">
+          {error}
+        </p>
+      )}
 
-                      <Link
-                        to={`/wallets/${wallet.id}`}
-                        className={
-                          stage2Details
-                            ? 'btn btn--small btn--primary'
-                            : 'btn btn--small'
+
+      {/* =================================================
+          WALLET TABLE
+      ================================================= */}
+
+      <section className="panel">
+
+        <div className="panel__header">
+
+          <div>
+
+            <h2 className="panel__title">
+              {status === "All"
+                ? "All Wallets"
+                : `${status} Wallets`}
+            </h2>
+
+            <p className="page__hint">
+              {wallets.length} wallet
+              {wallets.length === 1
+                ? ""
+                : "s"}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        {loading ? (
+
+          <div className="empty-state">
+            Loading wallets...
+          </div>
+
+        ) : (
+
+          <div className="table-wrap">
+
+            <table className="data-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Coin
+                  </th>
+
+                  <th>
+                    Trade ID
+                  </th>
+
+                  <th>
+                    Created By
+                  </th>
+
+                  <th>
+                    Stage
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th>
+                    Updated
+                  </th>
+
+                  <th>
+                    Action
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody>
+
+                {wallets.map(
+                  (wallet) => (
+
+                    <tr
+                      key={
+                        wallet.id
+                      }
+                    >
+
+                      <td>
+                        <strong>
+                          {
+                            wallet.coinName
+                          }
+                        </strong>
+                      </td>
+
+
+                      <td className="mono-cell">
+                        {
+                          wallet.tradeId
                         }
-                      >
+                      </td>
 
-                        {stage2Details
-                          ? 'Enter CP & SP'
-                          : 'View'}
 
-                      </Link>
+                      <td>
 
+                        <strong>
+                          {
+                            wallet.userName
+                          }
+                        </strong>
+
+                        <div className="table-sub">
+                          {
+                            wallet.creatorRole
+                          }
+                        </div>
+
+                      </td>
+
+
+                      <td>
+                        <span className="badge">
+                          Stage{" "}
+                          {
+                            wallet.stage
+                          }
+                        </span>
+                      </td>
+
+
+                      <td>
+                        <Badge
+                          status={
+                            wallet.status
+                          }
+                        />
+                      </td>
+
+
+                      <td>
+                        {formatDateTime(
+                          wallet.lastUpdated
+                        )}
+                      </td>
+
+
+                      <td>
+
+                        <Link
+                          to={`/wallets/${wallet.id}`}
+                          className="btn btn--small btn--primary"
+                        >
+                          View
+                        </Link>
+
+                      </td>
+
+                    </tr>
+
+                  )
+                )}
+
+
+                {!wallets.length && (
+
+                  <tr>
+
+                    <td
+                      colSpan="7"
+                      className="empty-row"
+                    >
+                      No wallets found
+                      in this stage.
                     </td>
 
                   </tr>
 
-                );
+                )}
 
-              }
-            )}
+              </tbody>
 
+            </table>
 
-            {/* EMPTY */}
+          </div>
 
-            {!filteredWallets.length && (
+        )}
 
-              <tr>
-
-                <td
-                  colSpan="7"
-                  className="empty-row"
-                >
-
-                  No wallet records found.
-
-                </td>
-
-              </tr>
-
-            )}
-
-
-          </tbody>
-
-        </table>
-
-      </div>
+      </section>
 
     </div>
-
   );
 }

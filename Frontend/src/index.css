@@ -4,28 +4,37 @@
    in-progress states, teal for the terminal "successful" outcome.
 ----------------------------------------------------------------- */
 :root {
-  --bg: #0a0e14;
-  --bg-panel: #121822;
-  --bg-panel-raised: #172032;
-  --border: #232c3a;
-  --border-soft: #1a222f;
-  --text: #e9edf3;
-  --text-dim: #8b96a8;
-  --text-faint: #5c6779;
+  /* Onchain Intelligence — professional navy & blue theme,
+     matched to the OCI brand mark. Primary accent replaces the
+     previous gold; status colors (violet/teal/red/amber) stay
+     as a distinct semantic palette for workflow states. */
+  --bg: #0a0e16;
+  --bg-panel: #10151f;
+  --bg-panel-raised: #161c29;
+  --border: #212a3a;
+  --border-soft: #1a2130;
+  --text: #eef1f6;
+  --text-dim: #8b95a8;
+  --text-faint: #5c6577;
 
-  --gold: #e8b54d;
-  --gold-dim: #4a3a1f;
+  --gold: #3E7BFA;
+  --gold-dim: #142542;
+  --primary: #3E7BFA;
+  --primary-hover: #5b8ffb;
+  --primary-dim: #142542;
+
   --violet: #7c83fd;
-  --violet-dim: #2a2b4a;
-  --teal: #33c9a8;
-  --teal-dim: #163831;
+  --violet-dim: #22254a;
+  --teal: #2fbf9e;
+  --teal-dim: #123330;
   --red: #e2665f;
   --red-dim: #3a1f1f;
-  --amber: #f0a93b;
-  --amber-dim: #3e2c14;
+  --amber: #e2a53b;
+  --amber-dim: #3a2c14;
 
   --radius-sm: 6px;
   --radius-md: 10px;
+  --shadow-md: 0 8px 24px rgba(4, 8, 16, 0.35);
   --font-display: 'Space Grotesk', 'Inter', sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -126,13 +135,23 @@ h3 {
 }
 
 .brand__mark {
-  font-size: 22px;
-  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 28px;
+  color: var(--primary);
   line-height: 1;
 }
 
+.brand__mark img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
 .brand__mark--lg {
-  font-size: 34px;
+  height: 40px;
 }
 
 .brand__text {
@@ -1225,7 +1244,7 @@ h3 {
 }
 
 .side-nav__link.is-active {
-  background: #4b391d;
+  background: #16294a;
   color: var(--gold);
 }
 
@@ -1452,7 +1471,7 @@ h3 {
 .queue-count {
   padding: 7px 12px;
   border-radius: 999px;
-  background: #342b19;
+  background: #16294a;
   color: var(--gold);
   font-size: 12px;
   font-weight: 700;
@@ -1613,7 +1632,7 @@ h3 {
 }
 
 .workflow-step.is-active .workflow-step__number {
-  background: #4b391d;
+  background: #16294a;
   border-color: #8d6b31;
   color: var(--gold);
 }
@@ -2001,15 +2020,20 @@ h3 {
 
 
 .login-brand__mark {
-  width: 28px;
-  height: 28px;
+  height: 32px;
 
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 
-  color: #efb84d;
-  font-size: 24px;
+  color: var(--primary);
+}
+
+.login-brand__mark img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 
@@ -2045,7 +2069,7 @@ h3 {
 .login-eyebrow {
   margin: 0 0 10px;
 
-  color: #efb84d;
+  color: #3E7BFA;
 
   font-size: 10px;
   font-weight: 700;
@@ -2142,7 +2166,7 @@ h3 {
 
 
 .login-field__input:focus {
-  border-color: #efb84d;
+  border-color: #3E7BFA;
 
   box-shadow:
     0 0 0 2px rgba(
@@ -2167,7 +2191,7 @@ h3 {
   border: none;
   border-radius: 6px;
 
-  background: #efb84d;
+  background: #3E7BFA;
   color: #11100b;
 
   font-family: inherit;
@@ -2230,7 +2254,7 @@ h3 {
 
 
 .login-signup a {
-  color: #efb84d;
+  color: #3E7BFA;
 
   font-weight: 700;
   text-decoration: none;
@@ -2306,7 +2330,7 @@ h3 {
 .login-visual__eyebrow {
   margin: 0 0 18px;
 
-  color: #efb84d;
+  color: #3E7BFA;
 
   font-size: 11px;
   font-weight: 700;
@@ -2494,7 +2518,7 @@ h3 {
 
   margin-bottom: 6px;
 
-  color: #efb84d;
+  color: #3E7BFA;
 
   font-size: 10px;
   font-weight: 700;
@@ -2527,9 +2551,9 @@ h3 {
 
   border-radius: 20px;
 
-  background: #342b19;
+  background: #16294a;
 
-  color: #efb84d;
+  color: #3E7BFA;
 
   font-size: 11px;
   font-weight: 700;
@@ -2597,7 +2621,7 @@ h3 {
 
 
 .stage2-field input:focus {
-  border-color: #efb84d;
+  border-color: #3E7BFA;
 
   box-shadow:
     0 0 0 2px rgba(
@@ -2661,4 +2685,789 @@ h3 {
     width: 100%;
   }
 
+}
+/* =========================================================
+   CLIENT CHANGE REQUESTS
+   3-STAGE PIPELINE
+========================================================= */
+
+.pipeline-panel {
+  overflow: hidden;
+}
+
+.pipeline {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 8px;
+  box-sizing: border-box;
+}
+
+.pipeline-step {
+  flex: 1;
+  min-width: 150px;
+  min-height: 115px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  box-sizing: border-box;
+
+  background: #111821;
+  border: 1px solid #273142;
+  border-radius: 10px;
+
+  color: #edf1f6;
+  text-decoration: none;
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.pipeline-step:hover {
+  transform: translateY(-2px);
+  border-color: #3E7BFA;
+  background: #151e2a;
+}
+
+.pipeline-step--active {
+  border-color: #3E7BFA;
+  background: #101e35;
+}
+
+.pipeline-step--success {
+  border-color: #2c8b73;
+}
+
+.pipeline-step__number {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  border: 1px solid #3a4658;
+
+  background: #182131;
+
+  color: #3E7BFA;
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.pipeline-step__content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pipeline-step__content strong {
+  color: #edf1f6;
+  font-size: 14px;
+}
+
+.pipeline-step__content span {
+  color: #758398;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.pipeline-step__content b {
+  color: #3E7BFA;
+  font-size: 18px;
+}
+
+.pipeline-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #69778a;
+
+  font-size: 24px;
+  font-weight: 700;
+
+  min-width: 24px;
+}
+
+.pipeline--compact {
+  padding: 8px;
+  align-items: center;
+}
+
+.pipeline-filter {
+  flex: 1;
+
+  min-height: 45px;
+
+  border: 1px solid #293548;
+  border-radius: 7px;
+
+  background: #111821;
+
+  color: #8794a7;
+
+  cursor: pointer;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pipeline-filter:hover {
+  border-color: #3E7BFA;
+  color: #3E7BFA;
+}
+
+.pipeline-filter--active {
+  background: #16294a;
+  border-color: #3E7BFA;
+  color: #3E7BFA;
+}
+
+.wallet-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 12px;
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.permission-card {
+  padding: 18px;
+
+  border: 1px solid #273142;
+  border-radius: 9px;
+
+  background: #111821;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.permission-card strong {
+  color: #3E7BFA;
+  font-size: 14px;
+}
+
+.permission-card span {
+  color: #77859a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.permission-card--admin {
+  border-color: #2c8b73;
+}
+
+.permission-card--admin strong {
+  color: #35c9a9;
+}
+
+/* =========================================================
+   MOBILE PIPELINE
+========================================================= */
+
+@media (max-width: 950px) {
+  .pipeline {
+    flex-wrap: wrap;
+  }
+
+  .pipeline-step {
+    min-width: 200px;
+  }
+
+  .pipeline-arrow {
+    display: none;
+  }
+
+  .permission-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .pipeline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pipeline-step {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pipeline--compact {
+    flex-direction: column;
+  }
+
+  .pipeline-filter {
+    width: 100%;
+  }
+
+  .wallet-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================================================================
+   CLIENT UI COMPATIBILITY LAYER
+   Supports the updated React components:
+   app-shell / sidebar / sidebar__* / sidebar-user / mobile-menu-btn
+   while preserving the original Onchain Intelligence design system.
+   ================================================================ */
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  background: var(--bg);
+}
+
+.app-shell .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  overflow-y: auto;
+  background: #111722;
+  border-right: 1px solid #202938;
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 9px 24px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.sidebar__logo {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.sidebar__logo img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.sidebar__brand-name {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sidebar__brand-sub {
+  margin-top: 3px;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.sidebar__role {
+  margin: 0 9px 12px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-panel-raised);
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #8f9bae;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.sidebar__link:hover {
+  background: #182130;
+  color: var(--text);
+}
+
+.sidebar__link--active {
+  background: var(--gold-dim);
+  border-color: rgba(232,181,77,.16);
+  color: var(--gold);
+}
+
+.sidebar__link-icon {
+  width: 20px;
+  flex: 0 0 20px;
+  text-align: center;
+  color: inherit;
+  font-size: 16px;
+}
+
+.sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 18px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 4px 3px;
+}
+
+.sidebar-user__avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--violet-dim);
+  color: var(--violet);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebar-user__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.sidebar-user__info strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user__info span {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--text-faint);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-logout {
+  width: 100%;
+}
+
+/* The updated Layout uses .shell as the main column.
+   Scope this override so the original .shell styles remain available elsewhere. */
+.app-shell > .shell {
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  background: var(--bg);
+}
+
+.app-shell > .shell .shell__content {
+  flex: 1;
+  width: 100%;
+  max-width: none;
+  padding: 34px 42px 50px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 60;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* Updated dashboard classes */
+.page__eyebrow {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.page__hint {
+  margin: 5px 0 0;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.page__header .btn {
+  flex-shrink: 0;
+}
+
+/* Updated pipeline */
+.pipeline-panel {
+  overflow: hidden;
+}
+
+.pipeline {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px 4px;
+}
+
+.pipeline-step {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 108px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid #273142;
+  border-radius: 10px;
+  background: #111821;
+  color: var(--text);
+  text-decoration: none;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.pipeline-step:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  background: #151e2a;
+}
+
+.pipeline-step--active {
+  border-color: var(--gold);
+  background: #101e35;
+}
+
+.pipeline-step--success {
+  border-color: #2c8b73;
+}
+
+.pipeline-step__number {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #3a4658;
+  border-radius: 50%;
+  background: #182131;
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.pipeline-step__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pipeline-step__content strong {
+  color: #edf1f6;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pipeline-step__content span {
+  color: #758398;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.pipeline-step__content b {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.pipeline-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  color: #69778a;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pipeline--compact {
+  align-items: center;
+  padding: 8px;
+}
+
+.pipeline-filter {
+  flex: 1 1 0;
+  min-height: 43px;
+  border: 1px solid #293548;
+  border-radius: 7px;
+  background: #111821;
+  color: #8794a7;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pipeline-filter:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.pipeline-filter--active {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.wallet-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+}
+
+/* Permission cards */
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.permission-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-panel-raised);
+}
+
+.permission-card strong {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.permission-card span {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.permission-card--admin {
+  border-color: #2c8b73;
+}
+
+.permission-card--admin strong {
+  color: var(--teal);
+}
+
+/* Detail page */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Keep buttons visually consistent with the original theme. */
+.btn--success {
+  background: var(--teal);
+  color: #04211b;
+}
+
+.btn--danger {
+  background: var(--red);
+  color: #fff;
+  border: 1px solid var(--red);
+}
+
+.empty-state {
+  padding: 40px 20px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* Responsive compatibility for the new Layout */
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+
+  .app-shell > .shell .shell__content {
+    padding: 30px 28px 45px;
+  }
+
+  .pipeline-step {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .pipeline {
+    flex-wrap: wrap;
+  }
+
+  .pipeline-step {
+    flex: 1 1 calc(50% - 30px);
+    min-width: 220px;
+  }
+
+  .pipeline-arrow {
+    display: none;
+  }
+
+  .permission-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 250px;
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    box-shadow: 16px 0 40px rgba(0,0,0,.35);
+  }
+
+  .app-shell .sidebar.sidebar--open {
+    transform: translateX(0);
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: rgba(0,0,0,.55);
+    cursor: pointer;
+  }
+
+  .app-shell > .shell .shell__content {
+    padding: 78px 20px 40px;
+  }
+
+  .page__header {
+    gap: 14px;
+  }
+
+  .wallet-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-shell > .shell .shell__content {
+    padding: 72px 15px 32px;
+  }
+
+  .pipeline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pipeline-step {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pipeline--compact {
+    flex-direction: column;
+  }
+
+  .pipeline-filter {
+    width: 100%;
+  }
+
+  .page__title {
+    font-size: 26px;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
 }

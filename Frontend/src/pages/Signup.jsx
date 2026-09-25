@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 
 import { useData } from '../lib/store';
+import logo from '../assets/logo-icon.png';
 
 export default function Signup() {
   const {
@@ -203,7 +204,7 @@ export default function Signup() {
         <div className="auth-brand">
 
           <span className="brand__mark brand__mark--lg">
-            ◆
+            <img src={logo} alt="Onchain Intelligence" />
           </span>
 
           <div>

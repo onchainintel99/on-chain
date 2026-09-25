@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 
-const { STATUSES, HISTORY_TYPES } = require("../constants");
+const {
+  STATUSES,
+  HISTORY_TYPES,
+} = require("../constants");
 
 const historySchema = new mongoose.Schema(
   {
@@ -50,8 +53,6 @@ const walletSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // No index: true here.
-    // The unique index is defined below.
     tradeIdNormalized: {
       type: String,
       required: true,
@@ -64,18 +65,32 @@ const walletSchema = new mongoose.Schema(
       default: "",
     },
 
+    /*
+     * The normal user who created the wallet.
+     *
+     * Wallet creation is restricted to role "user".
+     * Managers and Admin can review the wallet but
+     * cannot create wallets.
+     */
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      immutable: true,
       index: true,
     },
 
+    /*
+     * Current pipeline stage:
+     *
+     * 1 = Stage 1
+     * 2 = Stage 2
+     * 3 = Stage 3
+     */
     stage: {
       type: Number,
-      enum: [1, 2],
+      enum: [1, 2, 3],
       default: 1,
+      index: true,
     },
 
     status: {
@@ -85,6 +100,9 @@ const walletSchema = new mongoose.Schema(
       index: true,
     },
 
+    /*
+     * Stage 2 financial details
+     */
     costPrice: {
       type: Number,
       default: null,
@@ -95,6 +113,9 @@ const walletSchema = new mongoose.Schema(
       default: null,
     },
 
+    /*
+     * Stage 1 review
+     */
     stage1ReviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -106,6 +127,9 @@ const walletSchema = new mongoose.Schema(
       default: null,
     },
 
+    /*
+     * Stage 2 review
+     */
     stage2ReviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -117,6 +141,23 @@ const walletSchema = new mongoose.Schema(
       default: null,
     },
 
+    /*
+     * Stage 3 FINAL ADMIN approval
+     */
+    stage3ReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    stage3ReviewedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /*
+     * Failure information
+     */
     failedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -128,6 +169,9 @@ const walletSchema = new mongoose.Schema(
       default: null,
     },
 
+    /*
+     * Complete audit history
+     */
     history: {
       type: [historySchema],
       default: [],
@@ -138,11 +182,19 @@ const walletSchema = new mongoose.Schema(
   }
 );
 
-// Keep ONE unique index for normalized Trade ID.
-// This prevents two wallets from having the same Trade ID.
+/*
+ * Trade ID must be unique.
+ */
 walletSchema.index(
-  { tradeIdNormalized: 1 },
-  { unique: true }
+  {
+    tradeIdNormalized: 1,
+  },
+  {
+    unique: true,
+  }
 );
 
-module.exports = mongoose.model("Wallet", walletSchema);
+module.exports = mongoose.model(
+  "Wallet",
+  walletSchema
+);

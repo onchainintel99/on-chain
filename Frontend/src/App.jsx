@@ -1,33 +1,39 @@
-import React from 'react';
+import React from "react";
 
 import {
   HashRouter,
   Navigate,
   Route,
   Routes,
-} from 'react-router-dom';
+} from "react-router-dom";
 
-import { DataProvider } from './lib/store';
+import {
+  DataProvider,
+} from "./lib/store";
 
 import {
   RequireAuth,
   RequireRole,
-} from './components/ProtectedRoute';
+} from "./components/ProtectedRoute";
 
-import Layout from './components/Layout';
+import Layout from "./components/Layout";
 
-import Login from './pages/Login';
-import Signup from './pages/Signup';
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
-import Dashboard from './pages/Dashboard';
-import CreateWallet from './pages/AddWallet';
-import Wallets from './pages/Wallets';
-import WalletDetail from './pages/WalletDetail';
+import Dashboard from "./pages/Dashboard";
 
-import Manager1 from './pages/Manager1';
-import Manager2 from './pages/Manager2';
+import CreateWallet
+  from "./pages/AddWallet";
 
-import Admin from './pages/Admin';
+import Wallets
+  from "./pages/Wallets";
+
+import WalletDetail
+  from "./pages/WalletDetail";
+
+import Admin
+  from "./pages/Admin";
 
 
 export default function App() {
@@ -38,24 +44,28 @@ export default function App() {
 
         <Routes>
 
-          {/* =====================================================
-              AUTHENTICATION
-          ===================================================== */}
+          {/* =================================================
+              AUTH
+          ================================================= */}
 
           <Route
             path="/login"
-            element={<Login />}
+            element={
+              <Login />
+            }
           />
 
           <Route
             path="/signup"
-            element={<Signup />}
+            element={
+              <Signup />
+            }
           />
 
 
-          {/* =====================================================
-              PROTECTED APPLICATION
-          ===================================================== */}
+          {/* =================================================
+              PROTECTED APP
+          ================================================= */}
 
           <Route
             element={
@@ -65,77 +75,59 @@ export default function App() {
             }
           >
 
-            {/* =================================================
-                USER DASHBOARD
-            ================================================= */}
+            {/* Dashboard */}
 
             <Route
               path="/"
-              element={<Dashboard />}
+              element={
+                <Dashboard />
+              }
             />
 
 
-            {/* =================================================
-                ALL WALLETS
-            ================================================= */}
+            {/* Pipeline */}
+
+            <Route
+              path="/pipeline"
+              element={
+                <Wallets />
+              }
+            />
+
+
+            {/* Wallet list */}
 
             <Route
               path="/wallets"
-              element={<Wallets />}
+              element={
+                <Wallets />
+              }
             />
 
 
-            {/* =================================================
-                WALLET DETAILS
-
-                Stage 2 form is displayed inside WalletDetail.jsx
-                after Manager Stage 1 approves the wallet.
-            ================================================= */}
+            {/* Wallet detail */}
 
             <Route
               path="/wallets/:id"
-              element={<WalletDetail />}
+              element={
+                <WalletDetail />
+              }
             />
 
 
             {/* =================================================
-                CREATE WALLET
-                USER ONLY
+                ONLY NORMAL USER CAN CREATE WALLET
             ================================================= */}
 
             <Route
               path="/create-wallet"
               element={
-                <RequireRole roles={['user']}>
+                <RequireRole
+                  roles={[
+                    "user",
+                  ]}
+                >
                   <CreateWallet />
-                </RequireRole>
-              }
-            />
-
-
-            {/* =================================================
-                MANAGER STAGE 1
-            ================================================= */}
-
-            <Route
-              path="/manager/stage-1"
-              element={
-                <RequireRole roles={['manager1']}>
-                  <Manager1 />
-                </RequireRole>
-              }
-            />
-
-
-            {/* =================================================
-                MANAGER STAGE 2
-            ================================================= */}
-
-            <Route
-              path="/manager/stage-2"
-              element={
-                <RequireRole roles={['manager2']}>
-                  <Manager2 />
                 </RequireRole>
               }
             />
@@ -148,7 +140,11 @@ export default function App() {
             <Route
               path="/admin"
               element={
-                <RequireRole roles={['admin']}>
+                <RequireRole
+                  roles={[
+                    "admin",
+                  ]}
+                >
                   <Admin />
                 </RequireRole>
               }
@@ -157,9 +153,9 @@ export default function App() {
           </Route>
 
 
-          {/* =====================================================
+          {/* =================================================
               FALLBACK
-          ===================================================== */}
+          ================================================= */}
 
           <Route
             path="*"
