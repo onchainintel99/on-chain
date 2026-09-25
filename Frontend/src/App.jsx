@@ -1,5 +1,4 @@
 import React from "react";
-
 import {
   HashRouter,
   Navigate,
@@ -7,9 +6,7 @@ import {
   Routes,
 } from "react-router-dom";
 
-import {
-  DataProvider,
-} from "./lib/store";
+import { DataProvider } from "./lib/store";
 
 import {
   RequireAuth,
@@ -20,51 +17,36 @@ import Layout from "./components/Layout";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-
 import Dashboard from "./pages/Dashboard";
-
-import CreateWallet
-  from "./pages/AddWallet";
-
-import Wallets
-  from "./pages/Wallets";
-
-import WalletDetail
-  from "./pages/WalletDetail";
-
-import Admin
-  from "./pages/Admin";
-
+import CreateWallet from "./pages/AddWallet";
+import Wallets from "./pages/Wallets";
+import WalletDetail from "./pages/WalletDetail";
+import Admin from "./pages/Admin";
+import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
   return (
     <DataProvider>
-
       <HashRouter>
-
         <Routes>
-
           {/* =================================================
               AUTH
           ================================================= */}
 
           <Route
             path="/login"
-            element={
-              <Login />
-            }
+            element={<Login />}
           />
 
           <Route
             path="/signup"
-            element={
-              <Signup />
-            }
+            element={<Signup />}
           />
-
 
           {/* =================================================
               PROTECTED APP
+              Leaderboard belongs inside Layout so it receives
+              the normal sidebar/header shell.
           ================================================= */}
 
           <Route
@@ -74,46 +56,30 @@ export default function App() {
               </RequireAuth>
             }
           >
-
-            {/* Dashboard */}
-
             <Route
               path="/"
-              element={
-                <Dashboard />
-              }
+              element={<Dashboard />}
             />
-
-
-            {/* Pipeline */}
 
             <Route
               path="/pipeline"
-              element={
-                <Wallets />
-              }
+              element={<Wallets />}
             />
-
-
-            {/* Wallet list */}
 
             <Route
               path="/wallets"
-              element={
-                <Wallets />
-              }
+              element={<Wallets />}
             />
-
-
-            {/* Wallet detail */}
 
             <Route
               path="/wallets/:id"
-              element={
-                <WalletDetail />
-              }
+              element={<WalletDetail />}
             />
 
+            <Route
+              path="/leaderboard"
+              element={<Leaderboard />}
+            />
 
             {/* =================================================
                 ONLY NORMAL USER CAN CREATE WALLET
@@ -122,16 +88,11 @@ export default function App() {
             <Route
               path="/create-wallet"
               element={
-                <RequireRole
-                  roles={[
-                    "user",
-                  ]}
-                >
+                <RequireRole roles={["user"]}>
                   <CreateWallet />
                 </RequireRole>
               }
             />
-
 
             {/* =================================================
                 ADMIN
@@ -140,18 +101,12 @@ export default function App() {
             <Route
               path="/admin"
               element={
-                <RequireRole
-                  roles={[
-                    "admin",
-                  ]}
-                >
+                <RequireRole roles={["admin"]}>
                   <Admin />
                 </RequireRole>
               }
             />
-
           </Route>
-
 
           {/* =================================================
               FALLBACK
@@ -166,11 +121,8 @@ export default function App() {
               />
             }
           />
-
         </Routes>
-
       </HashRouter>
-
     </DataProvider>
   );
 }

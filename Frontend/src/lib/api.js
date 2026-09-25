@@ -311,3 +311,15 @@ export const createStaffRequest =
           ),
       }
     );
+
+    /* =========================================================
+   LEADERBOARD
+========================================================= */
+
+export const leaderboardRequest =
+  (range = "all") =>
+    request(
+      `/dashboard/leaderboard?range=${encodeURIComponent(
+        range
+      )}`
+    );
