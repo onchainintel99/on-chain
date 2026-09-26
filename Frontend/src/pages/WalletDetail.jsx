@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -12,13 +13,16 @@ import {
   useData,
 } from "../lib/store";
 
-import Badge
-  from "../components/Badge";
+import Badge from "../components/Badge";
 
 import {
   formatDateTime,
 } from "../lib/utils";
 
+
+/* =========================================================
+   HISTORY LABELS
+========================================================= */
 
 const LABELS = {
   created:
@@ -50,6 +54,107 @@ const LABELS = {
 };
 
 
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getId(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (
+    typeof value === "string"
+  ) {
+    return value;
+  }
+
+  if (
+    value._id
+  ) {
+    return String(value._id);
+  }
+
+  if (
+    value.id
+  ) {
+    return String(value.id);
+  }
+
+  return "";
+}
+
+
+function getDisplayName(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  if (
+    typeof value === "string"
+  ) {
+    return value;
+  }
+
+  return (
+    value.name ||
+    value.email ||
+    value.username ||
+    ""
+  );
+}
+
+
+function formatPercentage(
+  value
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "—";
+  }
+
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+    return "—";
+  }
+
+  return `${
+    number >= 0
+      ? "+"
+      : ""
+  }${number.toFixed(2)}%`;
+}
+
+
+function strategyClass(
+  value
+) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "";
+  }
+
+  return Number(value) >= 0
+    ? "strategy-positive"
+    : "strategy-negative";
+}
+
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function WalletDetail() {
   const {
     id,
@@ -58,18 +163,17 @@ export default function WalletDetail() {
 
   const {
     getWallet,
-
     stage1Decision,
-
     submitStage2,
-
     stage2Decision,
-
     stage3Decision,
-
     currentUser,
   } = useData();
 
+
+  /* =======================================================
+     STATE
+  ======================================================= */
 
   const [
     wallet,
@@ -84,14 +188,26 @@ export default function WalletDetail() {
 
 
   const [
-    costPrice,
-    setCostPrice,
+    stage2CoinName,
+    setStage2CoinName,
   ] = useState("");
 
 
   const [
-    soldPrice,
-    setSoldPrice,
+    entryPrice,
+    setEntryPrice,
+  ] = useState("");
+
+
+  const [
+    peakPrice,
+    setPeakPrice,
+  ] = useState("");
+
+
+  const [
+    exitPrice,
+    setExitPrice,
   ] = useState("");
 
 
@@ -107,9 +223,9 @@ export default function WalletDetail() {
   ] = useState(false);
 
 
-  /* =========================================================
-     LOAD
-  ========================================================= */
+  /* =======================================================
+     LOAD WALLET
+  ======================================================= */
 
   async function loadWallet() {
     try {
@@ -118,12 +234,49 @@ export default function WalletDetail() {
       const response =
         await getWallet(id);
 
+
+      const loadedWallet =
+        response?.wallet;
+
+
       setWallet(
-        response.wallet
+        loadedWallet
       );
+
+
+      /*
+       * If Stage 2 data already exists,
+       * populate the form with it.
+       */
+
+      if (
+        loadedWallet
+      ) {
+        setStage2CoinName(
+          loadedWallet.coinName ||
+          ""
+        );
+
+        setEntryPrice(
+          loadedWallet.entryPrice ??
+          ""
+        );
+
+        setPeakPrice(
+          loadedWallet.peakPrice ??
+          ""
+        );
+
+        setExitPrice(
+          loadedWallet.exitPrice ??
+          ""
+        );
+      }
+
     } catch (err) {
       setError(
-        err.message
+        err?.message ||
+        "Unable to load wallet."
       );
     }
   }
@@ -134,9 +287,241 @@ export default function WalletDetail() {
   }, [id]);
 
 
-  /* =========================================================
-     STAGE 1
-  ========================================================= */
+  /* =======================================================
+     CURRENT ROLE
+  ======================================================= */
+
+  const role =
+    currentUser?.role;
+
+
+  const canApprove =
+    [
+      "manager1",
+      "manager2",
+      "admin",
+    ].includes(
+      role
+    );
+
+
+  const isAdmin =
+    role === "admin";
+
+
+  /* =======================================================
+     OWNER CHECK
+  ======================================================= */
+
+  const walletOwnerId =
+    getId(
+      wallet?.userId
+    );
+
+
+  const currentUserId =
+    getId(
+      currentUser?._id ||
+      currentUser?.id
+    );
+
+
+  const isOwner =
+    walletOwnerId !== "" &&
+    currentUserId !== "" &&
+    walletOwnerId ===
+      currentUserId;
+
+
+  /* =======================================================
+     STAGE CONDITIONS
+  ======================================================= */
+
+  /*
+   * Normal user who created the wallet
+   * can enter Stage 2 details.
+   */
+
+  const showStage2Form =
+    role === "user" &&
+    isOwner &&
+    wallet?.status ===
+      "Pending Stage 2";
+
+
+  /*
+   * Manager 1 / Manager 2 / Admin
+   * can approve Stage 1.
+   */
+
+  const showStage1Actions =
+    canApprove &&
+    wallet?.status ===
+      "Pending Stage 1";
+
+
+  /*
+   * Stage 2 approval becomes available
+   * only after Stage 2 details are submitted.
+   */
+
+  const hasStage2Data =
+    Boolean(
+      wallet?.coinName
+    ) &&
+    wallet?.entryPrice !==
+      null &&
+    wallet?.entryPrice !==
+      undefined &&
+    wallet?.peakPrice !==
+      null &&
+    wallet?.peakPrice !==
+      undefined &&
+    wallet?.exitPrice !==
+      null &&
+    wallet?.exitPrice !==
+      undefined;
+
+
+  const showStage2Actions =
+    canApprove &&
+    wallet?.status ===
+      "Pending Stage 2" &&
+    hasStage2Data;
+
+
+  /*
+   * Only Admin gets Stage 3 final approval.
+   */
+
+  const showStage3Actions =
+    isAdmin &&
+    wallet?.status ===
+      "Pending Stage 3";
+
+
+  /* =======================================================
+     CALCULATED STRATEGIES
+  ======================================================= */
+
+  const liveStrategies =
+    useMemo(() => {
+      const entry =
+        Number(entryPrice);
+
+      const peak =
+        Number(peakPrice);
+
+      const exit =
+        Number(exitPrice);
+
+
+      if (
+        !Number.isFinite(entry) ||
+        entry <= 0
+      ) {
+        return {
+          userStrategy: null,
+          traderStrategy: null,
+        };
+      }
+
+
+      return {
+        userStrategy:
+          Number(
+            (
+              (
+                (peak - entry) /
+                entry
+              ) *
+              100
+            ).toFixed(2)
+          ),
+
+        traderStrategy:
+          Number(
+            (
+              (
+                (exit - entry) /
+                entry
+              ) *
+              100
+            ).toFixed(2)
+          ),
+      };
+    }, [
+      entryPrice,
+      peakPrice,
+      exitPrice,
+    ]);
+
+
+  /* =======================================================
+     EXISTING STRATEGIES
+  ======================================================= */
+
+  const userStrategy =
+    wallet?.userStrategy ??
+    wallet?.userStrategyPL ??
+    null;
+
+
+  const traderStrategy =
+    wallet?.traderStrategy ??
+    wallet?.traderStrategyPL ??
+    null;
+
+
+  /* =======================================================
+     CREATED BY
+  ======================================================= */
+
+  const creatorName =
+    getDisplayName(
+      wallet?.userId
+    ) ||
+    wallet?.userName ||
+    wallet?.createdBy ||
+    (
+      isOwner
+        ? currentUser?.name
+        : ""
+    ) ||
+    "—";
+
+
+  /* =======================================================
+     REVIEWER NAMES
+  ======================================================= */
+
+  const stage1Reviewer =
+    getDisplayName(
+      wallet?.stage1ReviewedBy
+    ) ||
+    wallet?.stage1ReviewedByName ||
+    "Pending";
+
+
+  const stage2Reviewer =
+    getDisplayName(
+      wallet?.stage2ReviewedBy
+    ) ||
+    wallet?.stage2ReviewedByName ||
+    "Pending";
+
+
+  const stage3Reviewer =
+    getDisplayName(
+      wallet?.stage3ReviewedBy
+    ) ||
+    wallet?.stage3ReviewedByName ||
+    "Pending";
+
+
+  /* =======================================================
+     STAGE 1 DECISION
+  ======================================================= */
 
   async function handleStage1(
     decision
@@ -161,19 +546,22 @@ export default function WalletDetail() {
       );
 
       setNote("");
+
     } catch (err) {
       setError(
-        err.message
+        err?.message ||
+        "Unable to process Stage 1."
       );
+
     } finally {
       setLoading(false);
     }
   }
 
 
-  /* =========================================================
+  /* =======================================================
      STAGE 2 SUBMIT
-  ========================================================= */
+  ======================================================= */
 
   async function handleStage2Submit(
     event
@@ -184,36 +572,97 @@ export default function WalletDetail() {
 
 
     if (
-      costPrice === "" ||
-      soldPrice === ""
+      !stage2CoinName.trim()
     ) {
       setError(
-        "Cost Price and Sold Price are required."
+        "Coin Name is required."
       );
 
       return;
     }
-
-
-    const cost =
-      Number(costPrice);
-
-    const sold =
-      Number(soldPrice);
 
 
     if (
-      !Number.isFinite(cost) ||
-      cost < 0 ||
-      !Number.isFinite(sold) ||
-      sold < 0
+      entryPrice === "" ||
+      peakPrice === "" ||
+      exitPrice === ""
     ) {
       setError(
-        "Enter valid CP and SP values."
+        "Entry Price, Peak Price and Exit Price are required."
       );
 
       return;
     }
+
+
+    const entry =
+      Number(entryPrice);
+
+    const peak =
+      Number(peakPrice);
+
+    const exit =
+      Number(exitPrice);
+
+
+    if (
+      !Number.isFinite(entry) ||
+      entry <= 0
+    ) {
+      setError(
+        "Entry Price must be greater than 0."
+      );
+
+      return;
+    }
+
+
+    if (
+      !Number.isFinite(peak) ||
+      peak < 0
+    ) {
+      setError(
+        "Peak Price must be a valid non-negative number."
+      );
+
+      return;
+    }
+
+
+    if (
+      !Number.isFinite(exit) ||
+      exit < 0
+    ) {
+      setError(
+        "Exit Price must be a valid non-negative number."
+      );
+
+      return;
+    }
+
+
+    const calculatedUserStrategy =
+      Number(
+        (
+          (
+            (peak - entry) /
+            entry
+          ) *
+          100
+        ).toFixed(2)
+      );
+
+
+    const calculatedTraderStrategy =
+      Number(
+        (
+          (
+            (exit - entry) /
+            entry
+          ) *
+          100
+        ).toFixed(2)
+      );
 
 
     setLoading(true);
@@ -224,8 +673,29 @@ export default function WalletDetail() {
         await submitStage2(
           id,
           {
-            costPrice: cost,
-            soldPrice: sold,
+            coinName:
+              stage2CoinName.trim(),
+
+            entryPrice:
+              entry,
+
+            peakPrice:
+              peak,
+
+            exitPrice:
+              exit,
+
+            userStrategy:
+              calculatedUserStrategy,
+
+            traderStrategy:
+              calculatedTraderStrategy,
+
+            userStrategyPL:
+              calculatedUserStrategy,
+
+            traderStrategyPL:
+              calculatedTraderStrategy,
           }
         );
 
@@ -234,21 +704,48 @@ export default function WalletDetail() {
         response.wallet
       );
 
-      setCostPrice("");
-      setSoldPrice("");
+
+      setStage2CoinName(
+        response.wallet?.coinName ||
+        stage2CoinName.trim()
+      );
+
+
+      setEntryPrice(
+        response.wallet?.entryPrice ??
+        entry
+      );
+
+
+      setPeakPrice(
+        response.wallet?.peakPrice ??
+        peak
+      );
+
+
+      setExitPrice(
+        response.wallet?.exitPrice ??
+        exit
+      );
+
+
+      setError("");
+
     } catch (err) {
       setError(
-        err.message
+        err?.message ||
+        "Unable to submit Stage 2 details."
       );
+
     } finally {
       setLoading(false);
     }
   }
 
 
-  /* =========================================================
-     STAGE 2 APPROVAL
-  ========================================================= */
+  /* =======================================================
+     STAGE 2 DECISION
+  ======================================================= */
 
   async function handleStage2(
     decision
@@ -273,19 +770,22 @@ export default function WalletDetail() {
       );
 
       setNote("");
+
     } catch (err) {
       setError(
-        err.message
+        err?.message ||
+        "Unable to process Stage 2."
       );
+
     } finally {
       setLoading(false);
     }
   }
 
 
-  /* =========================================================
-     STAGE 3 ADMIN
-  ========================================================= */
+  /* =======================================================
+     STAGE 3 DECISION
+  ======================================================= */
 
   async function handleStage3(
     decision
@@ -310,107 +810,71 @@ export default function WalletDetail() {
       );
 
       setNote("");
+
     } catch (err) {
       setError(
-        err.message
+        err?.message ||
+        "Unable to process Stage 3."
       );
+
     } finally {
       setLoading(false);
     }
   }
 
 
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
   if (!wallet) {
     return (
       <div className="page">
 
-        <p>
-          {error ||
-            "Loading wallet..."}
-        </p>
+        <Link
+          to="/wallets"
+          className="link link--back"
+        >
+          ← Back to wallets
+        </Link>
+
+
+        <div className="panel">
+
+          <p>
+            {error ||
+              "Loading wallet..."}
+          </p>
+
+        </div>
 
       </div>
     );
   }
 
 
-  const role =
-    currentUser?.role;
-
-
-  const canApprove =
-    [
-      "manager1",
-      "manager2",
-      "admin",
-    ].includes(
-      role
-    );
-
-
-  const isAdmin =
-    role === "admin";
-
-
-  const isOwner =
-    wallet.userId ===
-    currentUser?.id;
-
-
-  /*
-   * ONLY the normal user who created the wallet
-   * enters CP / SP during Stage 2.
-   *
-   * Managers and Admin can approve/reject Stage 2
-   * after the user submits both values.
-   */
-  const showStage2Form =
-    role === "user" &&
-    isOwner &&
-    wallet.status ===
-      "Pending Stage 2" &&
-    wallet.costPrice ==
-      null &&
-    wallet.soldPrice ==
-      null;
-
-
-  const showStage1Actions =
-    canApprove &&
-    wallet.status ===
-      "Pending Stage 1";
-
-
-  const showStage2Actions =
-    canApprove &&
-    wallet.status ===
-      "Pending Stage 2" &&
-    wallet.costPrice !=
-      null &&
-    wallet.soldPrice !=
-      null;
-
-
-  const showStage3Actions =
-    isAdmin &&
-    wallet.status ===
-      "Pending Stage 3";
-
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <div className="page">
+
+      {/* ===================================================
+          BACK
+      =================================================== */}
 
       <Link
         to="/wallets"
         className="link link--back"
       >
-        ← Back to pipeline
+        ← Back to wallets
       </Link>
 
 
-      {/* =================================================
+      {/* ===================================================
           HEADER
-      ================================================= */}
+      =================================================== */}
 
       <div className="page__header">
 
@@ -421,15 +885,26 @@ export default function WalletDetail() {
           </p>
 
           <h1 className="page__title">
-            {wallet.coinName}
+            Wallet Details
           </h1>
 
-          <p className="page__subtitle mono-cell">
+          <p className="page__subtitle">
+
             Trade ID:{" "}
-            {wallet.tradeId}
+
+            <span className="mono-cell">
+              {wallet.tradeId ||
+                "—"}
+            </span>
+
             {" · "}
+
             Created by{" "}
-            {wallet.userName}
+
+            <strong>
+              {creatorName}
+            </strong>
+
           </p>
 
         </div>
@@ -444,9 +919,9 @@ export default function WalletDetail() {
       </div>
 
 
-      {/* =================================================
-          VISUAL PIPELINE
-      ================================================= */}
+      {/* ===================================================
+          APPROVAL PIPELINE
+      =================================================== */}
 
       <section className="panel">
 
@@ -485,54 +960,59 @@ export default function WalletDetail() {
             (
               item,
               index,
-              arr
-            ) => (
+              array
+            ) => {
 
-              <React.Fragment
-                key={
-                  item.number
-                }
-              >
+              const active =
+                item.number <=
+                  (wallet.stage || 1) ||
+                (
+                  item.number === 4 &&
+                  wallet.status ===
+                    "Successful"
+                );
 
-                <div
-                  className={`pipeline-step ${
-                    wallet.stage >=
-                      item.number ||
-                    (
-                      item.number ===
-                        4 &&
-                      wallet.status ===
-                        "Successful"
-                    )
-                      ? "pipeline-step--active"
-                      : ""
-                  }`}
+
+              return (
+                <React.Fragment
+                  key={
+                    item.number
+                  }
                 >
 
-                  <div className="pipeline-step__number">
-                    {item.number}
+                  <div
+                    className={`pipeline-step ${
+                      active
+                        ? "pipeline-step--active"
+                        : ""
+                    }`}
+                  >
+
+                    <div className="pipeline-step__number">
+                      {item.number}
+                    </div>
+
+                    <div className="pipeline-step__content">
+
+                      <strong>
+                        {item.label}
+                      </strong>
+
+                    </div>
+
                   </div>
 
-                  <div className="pipeline-step__content">
 
-                    <strong>
-                      {item.label}
-                    </strong>
+                  {index <
+                    array.length - 1 && (
+                    <div className="pipeline-arrow">
+                      →
+                    </div>
+                  )}
 
-                  </div>
-
-                </div>
-
-
-                {index <
-                  arr.length - 1 && (
-                  <div className="pipeline-arrow">
-                    →
-                  </div>
-                )}
-
-              </React.Fragment>
-            )
+                </React.Fragment>
+              );
+            }
           )}
 
         </div>
@@ -540,9 +1020,9 @@ export default function WalletDetail() {
       </section>
 
 
-      {/* =================================================
-          DETAILS
-      ================================================= */}
+      {/* ===================================================
+          WALLET INFORMATION
+      =================================================== */}
 
       <section className="panel">
 
@@ -557,18 +1037,7 @@ export default function WalletDetail() {
 
         <dl className="detail-list">
 
-          <div className="detail-list__row">
-
-            <dt>
-              Coin Name
-            </dt>
-
-            <dd>
-              {wallet.coinName}
-            </dd>
-
-          </div>
-
+          {/* Trade ID */}
 
           <div className="detail-list__row">
 
@@ -577,11 +1046,14 @@ export default function WalletDetail() {
             </dt>
 
             <dd className="mono-cell">
-              {wallet.tradeId}
+              {wallet.tradeId ||
+                "—"}
             </dd>
 
           </div>
 
+
+          {/* Created By */}
 
           <div className="detail-list__row">
 
@@ -590,13 +1062,13 @@ export default function WalletDetail() {
             </dt>
 
             <dd>
-              {wallet.userName}
-              {" "}
-              ({wallet.creatorRole})
+              {creatorName}
             </dd>
 
           </div>
 
+
+          {/* Current Stage */}
 
           <div className="detail-list__row">
 
@@ -606,39 +1078,14 @@ export default function WalletDetail() {
 
             <dd>
               Stage{" "}
-              {wallet.stage}
+              {wallet.stage ||
+                1}
             </dd>
 
           </div>
 
 
-          <div className="detail-list__row">
-
-            <dt>
-              Cost Price
-            </dt>
-
-            <dd>
-              {wallet.costPrice ??
-                "Not submitted"}
-            </dd>
-
-          </div>
-
-
-          <div className="detail-list__row">
-
-            <dt>
-              Sold Price
-            </dt>
-
-            <dd>
-              {wallet.soldPrice ??
-                "Not submitted"}
-            </dd>
-
-          </div>
-
+          {/* Stage 1 Approved */}
 
           <div className="detail-list__row">
 
@@ -647,12 +1094,13 @@ export default function WalletDetail() {
             </dt>
 
             <dd>
-              {wallet.stage1ReviewedBy ||
-                "Pending"}
+              {stage1Reviewer}
             </dd>
 
           </div>
 
+
+          {/* Stage 2 Approved */}
 
           <div className="detail-list__row">
 
@@ -661,12 +1109,13 @@ export default function WalletDetail() {
             </dt>
 
             <dd>
-              {wallet.stage2ReviewedBy ||
-                "Pending"}
+              {stage2Reviewer}
             </dd>
 
           </div>
 
+
+          {/* Final Admin Approved */}
 
           <div className="detail-list__row">
 
@@ -675,20 +1124,167 @@ export default function WalletDetail() {
             </dt>
 
             <dd>
-              {wallet.stage3ReviewedBy ||
-                "Pending"}
+              {stage3Reviewer}
             </dd>
 
           </div>
 
         </dl>
 
+
+        {/* =================================================
+            STAGE 2 DATA TABLE
+
+            Stage 1 does NOT show these fields.
+        ================================================= */}
+
+        {hasStage2Data && (
+
+          <div className="stage2-details-table-section">
+
+            <div className="stage2-details-table-title">
+              Stage 2 Trade Details
+            </div>
+
+
+            <div className="table-wrap">
+
+              <table className="data-table stage2-trade-table">
+
+                <thead>
+
+                  <tr>
+
+                    <th>
+                      Coin Name
+                    </th>
+
+                    <th>
+                      Entry Price
+                    </th>
+
+                    <th>
+                      Peak Price
+                    </th>
+
+                    <th>
+                      Exit Price
+                    </th>
+
+                    <th>
+                      User Strategy
+                    </th>
+
+                    <th>
+                      Trader Strategy
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                  <tr>
+
+                    <td>
+                      {wallet.coinName ||
+                        "—"}
+                    </td>
+
+
+                    <td>
+                      {wallet.entryPrice !=
+                      null
+                        ? wallet.entryPrice
+                        : "—"}
+                    </td>
+
+
+                    <td>
+                      {wallet.peakPrice !=
+                      null
+                        ? wallet.peakPrice
+                        : "—"}
+                    </td>
+
+
+                    <td>
+                      {wallet.exitPrice !=
+                      null
+                        ? wallet.exitPrice
+                        : "—"}
+                    </td>
+
+
+                    <td>
+
+                      <span
+                        className={
+                          strategyClass(
+                            userStrategy
+                          )
+                        }
+                      >
+                        {formatPercentage(
+                          userStrategy
+                        )}
+                      </span>
+
+                    </td>
+
+
+                    <td>
+
+                      <span
+                        className={
+                          strategyClass(
+                            traderStrategy
+                          )
+                        }
+                      >
+                        {formatPercentage(
+                          traderStrategy
+                        )}
+                      </span>
+
+                    </td>
+
+                  </tr>
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+        )}
+
       </section>
 
 
-      {/* =================================================
-          STAGE 1 ACTION
-      ================================================= */}
+      {/* ===================================================
+          ERROR
+      =================================================== */}
+
+      {error && (
+
+        <div
+          className="form-error"
+          role="alert"
+        >
+          {error}
+        </div>
+
+      )}
+
+
+      {/* ===================================================
+          STAGE 1 APPROVAL
+      =================================================== */}
 
       {showStage1Actions && (
 
@@ -703,9 +1299,9 @@ export default function WalletDetail() {
               </h2>
 
               <p className="page__hint">
-                Manager 1, Manager 2
-                and Admin can approve
-                or reject this stage.
+                Manager 1, Manager 2 and
+                Admin can approve or reject
+                this wallet.
               </p>
 
             </div>
@@ -718,9 +1314,9 @@ export default function WalletDetail() {
             rows="3"
             placeholder="Optional approval note"
             value={note}
-            onChange={(e) =>
+            onChange={(event) =>
               setNote(
-                e.target.value
+                event.target.value
               )
             }
           />
@@ -729,6 +1325,7 @@ export default function WalletDetail() {
           <div className="action-block__buttons">
 
             <button
+              type="button"
               className="btn btn--success"
               disabled={loading}
               onClick={() =>
@@ -742,6 +1339,7 @@ export default function WalletDetail() {
 
 
             <button
+              type="button"
               className="btn btn--danger"
               disabled={loading}
               onClick={() =>
@@ -760,130 +1358,300 @@ export default function WalletDetail() {
       )}
 
 
-      {/* =================================================
-          STAGE 2 FORM
-      ================================================= */}
+      {/* ===================================================
+          STAGE 2 USER FORM
+      =================================================== */}
 
       {showStage2Form && (
 
         <section className="stage2-details-card">
 
-          {/* HEADER */}
           <div className="stage2-details-header">
 
             <div>
+
+              <span className="stage2-form-eyebrow">
+                STAGE 2
+              </span>
+
               <h2>
-                Stage 2 Details
+                Enter trading strategy details
               </h2>
 
               <p>
-                Enter the Cost Price and Sold Price before Stage 2 approval.
+                Enter Coin Name, Entry Price,
+                Peak Price and Exit Price.
+                User Strategy and Trader Strategy
+                will be calculated automatically.
               </p>
+
             </div>
 
+
             <span className="stage2-badge">
-              Stage 2
+              USER INPUT
             </span>
 
           </div>
 
 
-          {/* FORM */}
+          {/* =================================================
+              FORMULAS
+          ================================================= */}
+
+          <div className="stage2-formula-strip">
+
+            <div>
+
+              <span>
+                User Strategy
+              </span>
+
+              <strong>
+                ((Peak − Entry) ÷ Entry) × 100
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Trader Strategy
+              </span>
+
+              <strong>
+                ((Exit − Entry) ÷ Entry) × 100
+              </strong>
+
+            </div>
+
+          </div>
+
+
           <form
             className="stage2-form"
-            onSubmit={handleStage2Submit}
+            onSubmit={
+              handleStage2Submit
+            }
           >
 
-            <div className="stage2-fields">
+            <div className="stage2-fields stage2-fields--four">
 
-              {/* COST PRICE */}
+              {/* Coin */}
+
               <label className="stage2-field">
 
                 <span>
-                  Cost Price <strong>*</strong>
+                  Coin Name{" "}
+                  <strong>*</strong>
                 </span>
 
-                <div className="stage2-input-wrap">
-
-                  <span className="stage2-currency">
-                    ₹
-                  </span>
-
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={costPrice}
-                    onChange={(e) =>
-                      setCostPrice(e.target.value)
-                    }
-                    placeholder="0.00"
-                    className="stage2-input"
-                    required
-                  />
-
-                </div>
+                <input
+                  type="text"
+                  value={
+                    stage2CoinName
+                  }
+                  onChange={(event) =>
+                    setStage2CoinName(
+                      event.target.value
+                    )
+                  }
+                  placeholder="e.g. Bitcoin"
+                  className="stage2-input"
+                  autoComplete="off"
+                  required
+                />
 
               </label>
 
 
-              {/* SOLD PRICE */}
+              {/* Entry */}
+
               <label className="stage2-field">
 
                 <span>
-                  Sold Price <strong>*</strong>
+                  Entry Price{" "}
+                  <strong>*</strong>
                 </span>
 
-                <div className="stage2-input-wrap">
-
-                  <span className="stage2-currency">
-                    ₹
-                  </span>
-
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={soldPrice}
-                    onChange={(e) =>
-                      setSoldPrice(e.target.value)
-                    }
-                    placeholder="0.00"
-                    className="stage2-input"
-                    required
-                  />
-
-                </div>
+                <input
+                  type="number"
+                  min="0.00000001"
+                  step="any"
+                  value={
+                    entryPrice
+                  }
+                  onChange={(event) =>
+                    setEntryPrice(
+                      event.target.value
+                    )
+                  }
+                  placeholder="100"
+                  className="stage2-input"
+                  required
+                />
 
               </label>
 
 
-              {/* SUBMIT BUTTON */}
+              {/* Peak */}
+
+              <label className="stage2-field">
+
+                <span>
+                  Peak Price{" "}
+                  <strong>*</strong>
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={
+                    peakPrice
+                  }
+                  onChange={(event) =>
+                    setPeakPrice(
+                      event.target.value
+                    )
+                  }
+                  placeholder="150"
+                  className="stage2-input"
+                  required
+                />
+
+              </label>
+
+
+              {/* Exit */}
+
+              <label className="stage2-field">
+
+                <span>
+                  Exit Price{" "}
+                  <strong>*</strong>
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={
+                    exitPrice
+                  }
+                  onChange={(event) =>
+                    setExitPrice(
+                      event.target.value
+                    )
+                  }
+                  placeholder="120"
+                  className="stage2-input"
+                  required
+                />
+
+              </label>
+
+            </div>
+
+
+            {/* =================================================
+                LIVE STRATEGY PREVIEW
+            ================================================= */}
+
+            <div className="stage2-preview">
+
+              <div className="stage2-preview__title">
+                Strategy Preview
+              </div>
+
+
+              <div className="stage2-preview__grid">
+
+                <div className="strategy-preview-card">
+
+                  <span>
+                    User Strategy
+                  </span>
+
+                  <strong
+                    className={
+                      strategyClass(
+                        liveStrategies.userStrategy
+                      )
+                    }
+                  >
+                    {formatPercentage(
+                      liveStrategies.userStrategy
+                    )}
+                  </strong>
+
+                  <small>
+                    Peak vs Entry
+                  </small>
+
+                </div>
+
+
+                <div className="strategy-preview-card">
+
+                  <span>
+                    Trader Strategy
+                  </span>
+
+                  <strong
+                    className={
+                      strategyClass(
+                        liveStrategies.traderStrategy
+                      )
+                    }
+                  >
+                    {formatPercentage(
+                      liveStrategies.traderStrategy
+                    )}
+                  </strong>
+
+                  <small>
+                    Exit vs Entry
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+
+              <div
+                className="stage2-form-error"
+                role="alert"
+              >
+                {error}
+              </div>
+
+            )}
+
+
+            {/* =================================================
+                SUBMIT
+            ================================================= */}
+
+            <div className="stage2-form-actions">
+
               <button
                 type="submit"
                 className="stage2-submit-btn"
                 disabled={loading}
               >
-
-                {loading ? (
-                  <>
-                    <span className="stage2-spinner" />
-                    <span>
-                      Submitting...
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>
-                      Submit Stage 2
-                    </span>
-
-                    <span className="stage2-submit-arrow">
-                      →
-                    </span>
-                  </>
-                )}
-
+                {loading
+                  ? "Submitting..."
+                  : "Calculate Strategy & Submit →"}
               </button>
 
             </div>
@@ -895,9 +1663,108 @@ export default function WalletDetail() {
       )}
 
 
-      {/* =================================================
-          STAGE 3 ADMIN FINAL
-      ================================================= */}
+      {/* ===================================================
+          STAGE 2 APPROVAL
+      =================================================== */}
+
+      {showStage2Actions && (
+
+        <section className="panel">
+
+          <div className="panel__header">
+
+            <div>
+
+              <h2 className="panel__title">
+                Stage 2 Approval
+              </h2>
+
+              <p className="page__hint">
+                Manager 1, Manager 2 and
+                Admin can approve or reject
+                the submitted Stage 2 details.
+              </p>
+
+            </div>
+
+
+            <span className="badge">
+              REVIEW REQUIRED
+            </span>
+
+          </div>
+
+
+          {/* Stage 2 summary */}
+
+          <div className="status-callout">
+
+            <strong>
+              Stage 2 details submitted.
+            </strong>
+
+            <p>
+              Review the Coin Name, Entry,
+              Peak, Exit and strategy
+              percentages above before
+              approving this stage.
+            </p>
+
+          </div>
+
+
+          <textarea
+            className="field__input field__textarea"
+            rows="3"
+            placeholder="Optional Stage 2 approval note"
+            value={note}
+            onChange={(event) =>
+              setNote(
+                event.target.value
+              )
+            }
+          />
+
+
+          <div className="action-block__buttons">
+
+            <button
+              type="button"
+              className="btn btn--success"
+              disabled={loading}
+              onClick={() =>
+                handleStage2(
+                  "approve"
+                )
+              }
+            >
+              ✓ Approve Stage 2
+            </button>
+
+
+            <button
+              type="button"
+              className="btn btn--danger"
+              disabled={loading}
+              onClick={() =>
+                handleStage2(
+                  "reject"
+                )
+              }
+            >
+              ✕ Reject Stage 2
+            </button>
+
+          </div>
+
+        </section>
+
+      )}
+
+
+      {/* ===================================================
+          STAGE 3 ADMIN FINAL APPROVAL
+      =================================================== */}
 
       {showStage3Actions && (
 
@@ -918,6 +1785,7 @@ export default function WalletDetail() {
 
             </div>
 
+
             <span className="badge">
               ADMIN ONLY
             </span>
@@ -934,8 +1802,8 @@ export default function WalletDetail() {
 
             <p>
               Final Admin approval is
-              required before the
-              wallet becomes Successful.
+              required before the wallet
+              becomes Successful.
             </p>
 
           </div>
@@ -946,9 +1814,9 @@ export default function WalletDetail() {
             rows="3"
             placeholder="Optional final approval note"
             value={note}
-            onChange={(e) =>
+            onChange={(event) =>
               setNote(
-                e.target.value
+                event.target.value
               )
             }
           />
@@ -957,6 +1825,7 @@ export default function WalletDetail() {
           <div className="action-block__buttons">
 
             <button
+              type="button"
               className="btn btn--success"
               disabled={loading}
               onClick={() =>
@@ -970,6 +1839,7 @@ export default function WalletDetail() {
 
 
             <button
+              type="button"
               className="btn btn--danger"
               disabled={loading}
               onClick={() =>
@@ -988,9 +1858,9 @@ export default function WalletDetail() {
       )}
 
 
-      {/* =================================================
-          STATUS
-      ================================================= */}
+      {/* ===================================================
+          CURRENT STATUS
+      =================================================== */}
 
       <section className="panel">
 
@@ -1019,16 +1889,14 @@ export default function WalletDetail() {
 
             {wallet.status ===
               "Pending Stage 2" &&
-              wallet.costPrice ==
-                null &&
-              "Stage 1 has passed. Stage 2 details are required."}
+              !hasStage2Data &&
+              "Stage 1 has passed. Stage 2 trade details are required from the wallet owner."}
 
 
             {wallet.status ===
               "Pending Stage 2" &&
-              wallet.costPrice !=
-                null &&
-              "Stage 2 details have been submitted and are waiting for approval."}
+              hasStage2Data &&
+              "Stage 2 trade details have been submitted and are waiting for manager or admin approval."}
 
 
             {wallet.status ===
@@ -1049,19 +1917,12 @@ export default function WalletDetail() {
 
         </div>
 
-
-        {error && (
-          <p className="form-error">
-            {error}
-          </p>
-        )}
-
       </section>
 
 
-      {/* =================================================
-          HISTORY
-      ================================================= */}
+      {/* ===================================================
+          APPROVAL HISTORY
+      =================================================== */}
 
       <section className="panel">
 
@@ -1074,67 +1935,96 @@ export default function WalletDetail() {
         </div>
 
 
-        <ol className="timeline">
+        {wallet.history &&
+        wallet.history.length > 0 ? (
 
-          {[
-            ...(wallet.history ||
-              []),
-          ]
-            .reverse()
-            .map(
-              (item) => (
+          <ol className="timeline">
 
-                <li
-                  key={
-                    item.id
-                  }
-                  className="timeline__item"
-                >
+            {[
+              ...wallet.history,
+            ]
+              .reverse()
+              .map(
+                (
+                  item,
+                  index
+                ) => {
 
-                  <span className="timeline__dot" />
+                  const historyId =
+                    item._id ||
+                    item.id ||
+                    index;
 
 
-                  <div className="timeline__body">
-
-                    <p className="timeline__title">
-
-                      {
-                        LABELS[
-                          item.type
-                        ] ||
-                        "Update"
+                  return (
+                    <li
+                      key={
+                        historyId
                       }
+                      className="timeline__item"
+                    >
 
-                      <span className="timeline__by">
-                        {" "}
-                        —{" "}
-                        {item.by}
-                      </span>
-
-                    </p>
+                      <span className="timeline__dot" />
 
 
-                    <p className="timeline__detail">
-                      {
-                        item.detail
-                      }
-                    </p>
+                      <div className="timeline__body">
+
+                        <p className="timeline__title">
+
+                          {
+                            LABELS[
+                              item.type
+                            ] ||
+                            "Update"
+                          }
 
 
-                    <p className="timeline__time">
-                      {formatDateTime(
-                        item.at
-                      )}
-                    </p>
+                          {item.by && (
+                            <span className="timeline__by">
+                              {" "}
+                              —{" "}
+                              {item.by}
+                            </span>
+                          )}
 
-                  </div>
+                        </p>
 
-                </li>
 
-              )
-            )}
+                        {item.detail && (
+                          <p className="timeline__detail">
+                            {item.detail}
+                          </p>
+                        )}
 
-        </ol>
+
+                        {item.at && (
+                          <p className="timeline__time">
+                            {formatDateTime(
+                              item.at
+                            )}
+                          </p>
+                        )}
+
+                      </div>
+
+                    </li>
+                  );
+                }
+              )}
+
+          </ol>
+
+        ) : (
+
+          <div className="empty-state">
+
+            <p>
+              No approval history yet.
+            </p>
+
+          </div>
+
+        )}
 
       </section>
 

@@ -1,93 +1,237 @@
-import React, { useState } from 'react';
-import { useData } from '../lib/store';
+import React, { useState } from "react";
+import { useData } from "../lib/store";
 
-export default function Stage2Form({ wallet, onSubmitted }) {
-  const { updateWalletStage2 } = useData();
+export default function Stage2Form({
+  wallet,
+  onSubmitted,
+}) {
+  const {
+    submitStage2,
+  } = useData();
 
-  const [form, setForm] = useState({
-    coinName: wallet?.coinName || '',
-    tradeDetails: wallet?.tradeId || '',
-    costPrice: wallet?.costPrice || '',
-    soldPrice: wallet?.soldPrice || '',
+  const [
+    form,
+    setForm,
+  ] = useState({
+    coinName:
+      wallet?.coinName || "",
+
+    entryPrice:
+      wallet?.entryPrice ?? "",
+
+    peakPrice:
+      wallet?.peakPrice ?? "",
+
+    exitPrice:
+      wallet?.exitPrice ?? "",
   });
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-  const setField = (key, value) => {
-    setForm((previous) => ({
-      ...previous,
-      [key]: value,
-    }));
-  };
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-  async function handleSubmit(event) {
+
+  function setField(
+    key,
+    value
+  ) {
+    setForm(
+      (previous) => ({
+        ...previous,
+        [key]: value,
+      })
+    );
+
+    setError("");
+  }
+
+
+  async function handleSubmit(
+    event
+  ) {
     event.preventDefault();
 
-    setError('');
+    setError("");
+
+
+    /*
+     * =====================================================
+     * VALIDATION
+     * =====================================================
+     */
 
     if (
-      !form.coinName.trim() ||
-      !form.tradeDetails.trim() ||
-      !form.costPrice ||
-      !form.soldPrice
+      !form.coinName.trim()
     ) {
-      setError('Please fill all fields.');
+      setError(
+        "Coin Name is required."
+      );
+
       return;
     }
 
+
     if (
-      Number(form.costPrice) < 0 ||
-      Number(form.soldPrice) < 0
+      form.entryPrice === "" ||
+      form.peakPrice === "" ||
+      form.exitPrice === ""
     ) {
-      setError('CP and SP cannot be negative.');
+      setError(
+        "Please enter Entry Price, Peak Price and Exit Price."
+      );
+
       return;
     }
+
+
+    const entry =
+      Number(
+        form.entryPrice
+      );
+
+    const peak =
+      Number(
+        form.peakPrice
+      );
+
+    const exit =
+      Number(
+        form.exitPrice
+      );
+
+
+    if (
+      !Number.isFinite(
+        entry
+      ) ||
+      entry <= 0
+    ) {
+      setError(
+        "Entry Price must be greater than 0."
+      );
+
+      return;
+    }
+
+
+    if (
+      !Number.isFinite(
+        peak
+      ) ||
+      peak < 0
+    ) {
+      setError(
+        "Peak Price must be a valid number."
+      );
+
+      return;
+    }
+
+
+    if (
+      !Number.isFinite(
+        exit
+      ) ||
+      exit < 0
+    ) {
+      setError(
+        "Exit Price must be a valid number."
+      );
+
+      return;
+    }
+
+
+    /*
+     * =====================================================
+     * SUBMIT
+     *
+     * Backend calculates:
+     *
+     * User Strategy
+     * ((Peak - Entry) / Entry) × 100
+     *
+     * Trader Strategy
+     * ((Exit - Entry) / Entry) × 100
+     * =====================================================
+     */
 
     setLoading(true);
 
-    try {
-      await updateWalletStage2(wallet.id, {
-        coinName: form.coinName.trim(),
-        tradeId: form.tradeDetails.trim(),
-        costPrice: Number(form.costPrice),
-        soldPrice: Number(form.soldPrice),
-      });
 
-      if (onSubmitted) {
+    try {
+      await submitStage2(
+        wallet.id,
+        {
+          coinName:
+            form.coinName.trim(),
+
+          entryPrice:
+            entry,
+
+          peakPrice:
+            peak,
+
+          exitPrice:
+            exit,
+        }
+      );
+
+
+      if (
+        onSubmitted
+      ) {
         onSubmitted();
       }
 
-    } catch (err) {
+    } catch (
+      err
+    ) {
       setError(
-        err.message || 'Unable to submit Stage 2 details.'
+        err?.message ||
+        "Unable to submit Stage 2 details."
       );
+
     } finally {
       setLoading(false);
     }
   }
 
+
   return (
     <div className="stage2-form-card">
 
-      {/* Header */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <div className="stage2-form-header">
 
         <div>
+
           <span className="stage2-form-eyebrow">
             STAGE 2
           </span>
 
           <h3>
-            Enter trade details
+            Enter trading strategy details
           </h3>
 
           <p>
-            Stage 1 has been approved. Enter the
-            pricing information required for Stage 2.
+            Enter Coin Name, Entry Price,
+            Peak Price and Exit Price.
+            User Strategy and Trader Strategy
+            will be calculated automatically.
           </p>
+
         </div>
+
 
         <span className="stage2-form-status">
           Stage 2 Required
@@ -96,119 +240,149 @@ export default function Stage2Form({ wallet, onSubmitted }) {
       </div>
 
 
-      {/* Form */}
+      {/* =================================================
+          FORM
+      ================================================= */}
 
       <form
         className="stage2-form"
-        onSubmit={handleSubmit}
+        onSubmit={
+          handleSubmit
+        }
       >
 
-        {/* Coin Name */}
+        {/* =================================================
+            COIN NAME
+        ================================================= */}
 
         <label className="stage2-field">
 
           <span>
-            Coin Name
+            Coin Name *
           </span>
 
           <input
             type="text"
-            value={form.coinName}
+            value={
+              form.coinName
+            }
             onChange={(event) =>
               setField(
-                'coinName',
+                "coinName",
                 event.target.value
               )
             }
             placeholder="e.g. Bitcoin"
+            autoComplete="off"
           />
 
         </label>
 
 
-        {/* Trade Details */}
+        {/* =================================================
+            ENTRY PRICE
+        ================================================= */}
 
         <label className="stage2-field">
 
           <span>
-            Trade Details / Trade ID
+            Entry Price *
           </span>
 
           <input
-            type="text"
-            value={form.tradeDetails}
+            type="number"
+            min="0.00000001"
+            step="0.01"
+            value={
+              form.entryPrice
+            }
             onChange={(event) =>
               setField(
-                'tradeDetails',
+                "entryPrice",
                 event.target.value
               )
             }
-            placeholder="Enter trade ID or trade details"
+            placeholder="Enter entry price"
           />
 
         </label>
 
 
-        {/* Cost Price */}
+        {/* =================================================
+            PEAK PRICE
+        ================================================= */}
 
         <label className="stage2-field">
 
           <span>
-            Cost Price (CP)
+            Peak Price *
           </span>
 
           <input
             type="number"
             min="0"
             step="0.01"
-            value={form.costPrice}
+            value={
+              form.peakPrice
+            }
             onChange={(event) =>
               setField(
-                'costPrice',
+                "peakPrice",
                 event.target.value
               )
             }
-            placeholder="Enter cost price"
+            placeholder="Enter peak price"
           />
 
         </label>
 
 
-        {/* Sold Price */}
+        {/* =================================================
+            EXIT PRICE
+        ================================================= */}
 
         <label className="stage2-field">
 
           <span>
-            Sold Price (SP)
+            Exit Price *
           </span>
 
           <input
             type="number"
             min="0"
             step="0.01"
-            value={form.soldPrice}
+            value={
+              form.exitPrice
+            }
             onChange={(event) =>
               setField(
-                'soldPrice',
+                "exitPrice",
                 event.target.value
               )
             }
-            placeholder="Enter sold price"
+            placeholder="Enter exit price"
           />
 
         </label>
 
 
-        {/* Error */}
+        {/* =================================================
+            ERROR
+        ================================================= */}
 
         {error && (
-          <p className="stage2-form-error">
+          <div
+            className="stage2-form-error"
+            role="alert"
+          >
             {error}
-          </p>
+          </div>
         )}
 
 
-        {/* Submit */}
+        {/* =================================================
+            ACTIONS
+        ================================================= */}
 
         <div className="stage2-form-actions">
 
@@ -218,8 +392,8 @@ export default function Stage2Form({ wallet, onSubmitted }) {
             disabled={loading}
           >
             {loading
-              ? 'Submitting...'
-              : 'Submit for Stage 2 Approval'}
+              ? "Submitting..."
+              : "Submit for Stage 2 Approval"}
           </button>
 
         </div>

@@ -56,9 +56,37 @@ function walletResponse(wallet) {
 
     status: w.status,
 
-    costPrice: w.costPrice,
+    /* Stage 2 strategy data */
+    entryPrice:
+      w.entryPrice ??
+      w.costPrice ??
+      null,
 
-    soldPrice: w.soldPrice,
+    peakPrice:
+      w.peakPrice ??
+      null,
+
+    exitPrice:
+      w.exitPrice ??
+      w.soldPrice ??
+      null,
+
+    userStrategyPL:
+      w.userStrategyPL ??
+      null,
+
+    traderStrategyPL:
+      w.traderStrategyPL ??
+      null,
+
+    /* Legacy aliases */
+    costPrice: w.costPrice ??
+      w.entryPrice ??
+      null,
+
+    soldPrice: w.soldPrice ??
+      w.exitPrice ??
+      null,
 
     /*
      * Stage 1

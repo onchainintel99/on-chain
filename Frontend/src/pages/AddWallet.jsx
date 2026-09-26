@@ -23,13 +23,23 @@ export default function AddWallet() {
     useNavigate();
 
 
+  /*
+   * =========================================================
+   * STAGE 1 FORM
+   *
+   * Stage 1 only asks for:
+   * - Trade ID
+   *
+   * Coin Name, Entry Price, Peak Price and Exit Price
+   * will be collected later in Stage 2.
+   * =========================================================
+   */
+
   const [
     form,
     setForm,
   ] = useState({
-    coinName: "",
     tradeId: "",
-    notes: "",
   });
 
 
@@ -40,10 +50,22 @@ export default function AddWallet() {
 
 
   const [
+    duplicate,
+    setDuplicate,
+  ] = useState(false);
+
+
+  const [
     loading,
     setLoading,
   ] = useState(false);
 
+
+  /*
+   * =========================================================
+   * FIELD UPDATE
+   * =========================================================
+   */
 
   function setField(
     key,
@@ -56,27 +78,34 @@ export default function AddWallet() {
         [key]: value,
       })
     );
+
+
+    if (key === "tradeId") {
+      setDuplicate(false);
+      setError("");
+    }
   }
 
+
+  /*
+   * =========================================================
+   * SUBMIT
+   * =========================================================
+   */
 
   async function handleSubmit(
     event
   ) {
     event.preventDefault();
 
+
     setError("");
+    setDuplicate(false);
 
 
-    if (
-      !form.coinName.trim()
-    ) {
-      setError(
-        "Coin name is required."
-      );
-
-      return;
-    }
-
+    /*
+     * Trade ID validation
+     */
 
     if (
       !form.tradeId.trim()
@@ -93,24 +122,77 @@ export default function AddWallet() {
 
 
     try {
-      const response =
-        await createWallet(
-          form
-        );
+      /*
+       * Only send Trade ID to Stage 1.
+       */
 
+      const response =
+        await createWallet({
+          tradeId:
+            form.tradeId.trim(),
+        });
+
+
+      /*
+       * After successful creation,
+       * open the newly created wallet.
+       */
 
       navigate(
         `/wallets/${response.wallet.id}`
       );
     } catch (err) {
-      setError(
-        err.message
-      );
+      const message =
+        err?.message ||
+        "Unable to create wallet.";
+
+
+      /*
+       * =====================================================
+       * DUPLICATE TRADE ID
+       * =====================================================
+       */
+
+      const normalizedMessage =
+        message.toLowerCase();
+
+
+      if (
+        normalizedMessage.includes(
+          "already used"
+        ) ||
+        normalizedMessage.includes(
+          "already exists"
+        ) ||
+        normalizedMessage.includes(
+          "duplicate"
+        ) ||
+        normalizedMessage.includes(
+          "trade id"
+        ) &&
+        normalizedMessage.includes(
+          "unique"
+        )
+      ) {
+        setDuplicate(true);
+
+        setError(
+          "This Trade ID is already used. A wallet cannot be created twice with the same Trade ID."
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
   }
 
+
+  /*
+   * =========================================================
+   * UI
+   * =========================================================
+   */
 
   return (
     <div className="page">
@@ -156,30 +238,9 @@ export default function AddWallet() {
         }
       >
 
-        <label className="field">
-
-          <span className="field__label">
-            Coin Name *
-          </span>
-
-          <input
-            className="field__input"
-            type="text"
-            value={
-              form.coinName
-            }
-            onChange={(e) =>
-              setField(
-                "coinName",
-                e.target.value
-              )
-            }
-            placeholder="e.g. Bitcoin"
-            autoFocus
-          />
-
-        </label>
-
+        {/* =================================================
+            TRADE ID
+        ================================================= */}
 
         <label className="field">
 
@@ -200,48 +261,68 @@ export default function AddWallet() {
               )
             }
             placeholder="Enter Trade ID"
+            autoFocus
+            required
           />
 
-        </label>
-
-
-        <label className="field">
-
-          <span className="field__label">
-            Notes
+          <span className="field__hint">
+            Each Trade ID can only be used once.
           </span>
 
-          <textarea
-            className="field__input field__textarea"
-            rows="5"
-            value={
-              form.notes
-            }
-            onChange={(e) =>
-              setField(
-                "notes",
-                e.target.value
-              )
-            }
-            placeholder="Optional wallet notes"
-          />
-
         </label>
 
 
+        {/* =================================================
+            DUPLICATE / ERROR MESSAGE
+        ================================================= */}
+
         {error && (
-          <p className="form-error">
-            {error}
-          </p>
+          <div
+            className={
+              duplicate
+                ? "duplicate-wallet-alert"
+                : "form-error"
+            }
+            role="alert"
+          >
+
+            {duplicate && (
+              <span className="duplicate-wallet-alert__icon">
+                !
+              </span>
+            )}
+
+            <div>
+
+              <strong>
+                {duplicate
+                  ? "Duplicate Trade ID"
+                  : "Unable to create wallet"}
+              </strong>
+
+              <p>
+                {error}
+              </p>
+
+            </div>
+
+          </div>
         )}
 
+
+        {/* =================================================
+            ACTIONS
+        ================================================= */}
 
         <div className="form__actions">
 
           <button
             type="submit"
             className="btn btn--primary"
-            disabled={loading}
+            disabled={
+              loading ||
+              !form.tradeId.trim()
+            }
           >
             {loading
               ? "Creating..."

@@ -7,10 +7,6 @@ const {
   HISTORY_TYPES,
 } = require("../constants");
 
-const {
-  walletResponse,
-} = require("../utils/wallet");
-
 
 /* =========================================================
    POPULATE WALLET
@@ -45,6 +41,380 @@ const populate = (query) =>
 
 
 /* =========================================================
+   HELPER — OBJECT ID
+========================================================= */
+
+function objectIdToString(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  if (
+    typeof value === "string"
+  ) {
+    return value;
+  }
+
+  if (
+    value._id
+  ) {
+    return value._id.toString();
+  }
+
+  if (
+    value.id
+  ) {
+    return value.id.toString();
+  }
+
+  if (
+    value.toString
+  ) {
+    return value.toString();
+  }
+
+  return "";
+}
+
+
+/* =========================================================
+   HELPER — USER NAME
+========================================================= */
+
+function getUserName(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  /*
+   * Populated User object
+   */
+
+  if (
+    typeof value === "object"
+  ) {
+    return (
+      value.name ||
+      value.email ||
+      ""
+    );
+  }
+
+  return "";
+}
+
+
+/* =========================================================
+   WALLET RESPONSE
+========================================================= */
+
+/*
+ * IMPORTANT:
+ *
+ * DO NOT convert populated userId into only
+ * the MongoDB ObjectId.
+ *
+ * The frontend needs:
+ *
+ * wallet.userName
+ * wallet.userEmail
+ * wallet.userRole
+ *
+ * so that it can display:
+ *
+ * Created By → Bhuvan
+ *
+ * instead of:
+ *
+ * Created By → 6ab36c073...
+ */
+
+function walletResponse(
+  wallet
+) {
+  if (!wallet) {
+    return null;
+  }
+
+
+  const data =
+    wallet.toObject
+      ? wallet.toObject()
+      : wallet;
+
+
+  /* =======================================================
+     CREATOR
+  ======================================================= */
+
+  const creatorId =
+    objectIdToString(
+      data.userId
+    );
+
+  const creatorName =
+    getUserName(
+      data.userId
+    );
+
+  const creatorEmail =
+    data.userId?.email ||
+    "";
+
+  const creatorRole =
+    data.userId?.role ||
+    "";
+
+
+  /* =======================================================
+     STAGE 1 REVIEWER
+  ======================================================= */
+
+  const stage1ReviewerId =
+    objectIdToString(
+      data.stage1ReviewedBy
+    );
+
+  const stage1ReviewerName =
+    getUserName(
+      data.stage1ReviewedBy
+    );
+
+  const stage1ReviewerEmail =
+    data.stage1ReviewedBy?.email ||
+    "";
+
+  const stage1ReviewerRole =
+    data.stage1ReviewedBy?.role ||
+    "";
+
+
+  /* =======================================================
+     STAGE 2 REVIEWER
+  ======================================================= */
+
+  const stage2ReviewerId =
+    objectIdToString(
+      data.stage2ReviewedBy
+    );
+
+  const stage2ReviewerName =
+    getUserName(
+      data.stage2ReviewedBy
+    );
+
+  const stage2ReviewerEmail =
+    data.stage2ReviewedBy?.email ||
+    "";
+
+  const stage2ReviewerRole =
+    data.stage2ReviewedBy?.role ||
+    "";
+
+
+  /* =======================================================
+     STAGE 3 REVIEWER
+  ======================================================= */
+
+  const stage3ReviewerId =
+    objectIdToString(
+      data.stage3ReviewedBy
+    );
+
+  const stage3ReviewerName =
+    getUserName(
+      data.stage3ReviewedBy
+    );
+
+  const stage3ReviewerEmail =
+    data.stage3ReviewedBy?.email ||
+    "";
+
+  const stage3ReviewerRole =
+    data.stage3ReviewedBy?.role ||
+    "";
+
+
+  /* =======================================================
+     FAILED BY
+  ======================================================= */
+
+  const failedById =
+    objectIdToString(
+      data.failedBy
+    );
+
+  const failedByName =
+    getUserName(
+      data.failedBy
+    );
+
+  const failedByEmail =
+    data.failedBy?.email ||
+    "";
+
+  const failedByRole =
+    data.failedBy?.role ||
+    "";
+
+
+  /* =======================================================
+     RETURN
+  ======================================================= */
+
+  return {
+    ...data,
+
+    id:
+      data._id?.toString?.() ||
+      data.id,
+
+
+    /*
+     * KEEP THE POPULATED USER OBJECT
+     *
+     * This is important for the frontend.
+     */
+
+    userId:
+      data.userId || null,
+
+
+    /*
+     * Flat creator information
+     */
+
+    userIdString:
+      creatorId,
+
+    userName:
+      creatorName,
+
+    userEmail:
+      creatorEmail,
+
+    userRole:
+      creatorRole,
+
+
+    /*
+     * Stage 1 reviewer
+     */
+
+    stage1ReviewedBy:
+      data.stage1ReviewedBy ||
+      null,
+
+    stage1ReviewedById:
+      stage1ReviewerId,
+
+    stage1ReviewedByName:
+      stage1ReviewerName,
+
+    stage1ReviewedByEmail:
+      stage1ReviewerEmail,
+
+    stage1ReviewedByRole:
+      stage1ReviewerRole,
+
+
+    /*
+     * Stage 2 reviewer
+     */
+
+    stage2ReviewedBy:
+      data.stage2ReviewedBy ||
+      null,
+
+    stage2ReviewedById:
+      stage2ReviewerId,
+
+    stage2ReviewedByName:
+      stage2ReviewerName,
+
+    stage2ReviewedByEmail:
+      stage2ReviewerEmail,
+
+    stage2ReviewedByRole:
+      stage2ReviewerRole,
+
+
+    /*
+     * Stage 3 reviewer
+     */
+
+    stage3ReviewedBy:
+      data.stage3ReviewedBy ||
+      null,
+
+    stage3ReviewedById:
+      stage3ReviewerId,
+
+    stage3ReviewedByName:
+      stage3ReviewerName,
+
+    stage3ReviewedByEmail:
+      stage3ReviewerEmail,
+
+    stage3ReviewedByRole:
+      stage3ReviewerRole,
+
+
+    /*
+     * Failed by
+     */
+
+    failedBy:
+      data.failedBy ||
+      null,
+
+    failedById:
+      failedById,
+
+    failedByName:
+      failedByName,
+
+    failedByEmail:
+      failedByEmail,
+
+    failedByRole:
+      failedByRole,
+  };
+}
+
+
+/* =========================================================
+   STAGE 2 VISIBILITY
+========================================================= */
+
+/*
+ * Stage 2 wallets are visible to:
+ *
+ * User
+ * Manager 1
+ * Manager 2
+ * Admin
+ *
+ * This is required because Stage 2
+ * strategy information is a shared review view.
+ */
+
+function isStage2Wallet(
+  wallet
+) {
+  return (
+    wallet?.stage === 2 &&
+    wallet?.status ===
+      STATUSES.PENDING_STAGE2
+  );
+}
+
+
+/* =========================================================
    LIST WALLETS
 ========================================================= */
 
@@ -63,24 +433,26 @@ async function listWallets(
       limit = 100,
     } = req.query;
 
+
     const filter = {};
 
 
-    /*
-     * STATUS FILTER
-     */
+    /* =======================================================
+       STATUS FILTER
+    ======================================================= */
 
     if (
       status &&
       status !== "All"
     ) {
-      filter.status = status;
+      filter.status =
+        status;
     }
 
 
-    /*
-     * STAGE FILTER
-     */
+    /* =======================================================
+       STAGE FILTER
+    ======================================================= */
 
     if (
       stage &&
@@ -101,13 +473,28 @@ async function listWallets(
 
 
     /*
-     * NORMAL USERS
+     * =======================================================
+     * NORMAL USER VISIBILITY
      *
-     * Users only see their wallets.
+     * Normal users:
+     *
+     * - Own wallets normally
+     * - All wallets while they are in Stage 2
+     *
+     * Managers/Admin:
+     * - All wallets
+     * =======================================================
      */
 
+    const isStage2Request =
+      stage === "2" ||
+      status ===
+        STATUSES.PENDING_STAGE2;
+
+
     if (
-      req.user.role === "user"
+      req.user.role === "user" &&
+      !isStage2Request
     ) {
       filter.userId =
         req.user._id;
@@ -115,7 +502,8 @@ async function listWallets(
 
 
     /*
-     * mine=true
+     * mine=true explicitly means
+     * current user's wallets.
      */
 
     if (
@@ -126,15 +514,16 @@ async function listWallets(
     }
 
 
-    /*
-     * SEARCH
-     */
+    /* =======================================================
+       SEARCH
+    ======================================================= */
 
     if (
       search.trim()
     ) {
       const q =
         search.trim();
+
 
       filter.$or = [
         {
@@ -154,6 +543,10 @@ async function listWallets(
     }
 
 
+    /* =======================================================
+       PAGINATION
+    ======================================================= */
+
     const safeLimit =
       Math.min(
         Math.max(
@@ -162,6 +555,7 @@ async function listWallets(
         ),
         200
       );
+
 
     const safePage =
       Math.max(
@@ -180,8 +574,9 @@ async function listWallets(
             updatedAt: -1,
           })
           .skip(
-            (safePage - 1) *
-              safeLimit
+            (
+              safePage - 1
+            ) * safeLimit
           )
           .limit(
             safeLimit
@@ -203,9 +598,11 @@ async function listWallets(
         ),
 
       pagination: {
-        page: safePage,
+        page:
+          safePage,
 
-        limit: safeLimit,
+        limit:
+          safeLimit,
 
         total,
 
@@ -263,22 +660,47 @@ async function getWallet(
 
 
     /*
-     * Users can only view
-     * their own wallets.
+     * =======================================================
+     * USER VISIBILITY
      *
-     * Managers/Admin can view all.
+     * Normal users can:
+     *
+     * 1. View their own wallets
+     *
+     * 2. View Stage 2 wallets because
+     *    Stage 2 is a shared review view.
+     * =======================================================
      */
 
     if (
-      req.user.role === "user" &&
-      wallet.userId._id.toString() !==
-        req.user._id.toString()
+      req.user.role === "user"
     ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You cannot view this wallet",
-      });
+      const ownerId =
+        wallet.userId?._id?.toString?.() ||
+        wallet.userId?.toString?.();
+
+
+      const ownWallet =
+        ownerId ===
+        req.user._id.toString();
+
+
+      const sharedStage2 =
+        isStage2Wallet(
+          wallet
+        );
+
+
+      if (
+        !ownWallet &&
+        !sharedStage2
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "You cannot view this wallet",
+        });
+      }
     }
 
 
@@ -307,10 +729,14 @@ async function createWallet(
 ) {
   try {
     /*
-     * ONLY normal users can create wallets.
-     * Managers and Admin are reviewers only.
+     * =======================================================
+     * ONLY NORMAL USER
+     * =======================================================
      */
-    if (req.user.role !== "user") {
+
+    if (
+      req.user.role !== "user"
+    ) {
       return res.status(403).json({
         success: false,
         message:
@@ -318,30 +744,46 @@ async function createWallet(
       });
     }
 
+
     const {
-      coinName,
       tradeId,
       notes = "",
     } = req.body;
 
 
+    /*
+     * =======================================================
+     * STAGE 1 ONLY NEEDS TRADE ID
+     *
+     * NO COIN NAME
+     * =======================================================
+     */
+
     if (
-      !coinName?.trim() ||
-      !tradeId?.trim()
+      !tradeId ||
+      !tradeId.trim()
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Coin name and trade ID are required",
+          "Trade ID is required",
       });
     }
 
 
-    const normalized =
-      tradeId
-        .trim()
-        .toLowerCase();
+    const cleanTradeId =
+      tradeId.trim();
 
+
+    const normalized =
+      cleanTradeId.toLowerCase();
+
+
+    /*
+     * =======================================================
+     * DUPLICATE TRADE ID CHECK
+     * =======================================================
+     */
 
     const existing =
       await Wallet.findOne({
@@ -354,7 +796,7 @@ async function createWallet(
       return res.status(409).json({
         success: false,
         message:
-          "This trade ID already exists",
+          "This Trader ID is already used. Please enter a different Trader ID.",
       });
     }
 
@@ -364,23 +806,29 @@ async function createWallet(
 
 
     /*
-     * Wallet creation is restricted to normal users.
-     * Managers and Admin only review wallets.
+     * =======================================================
+     * CREATE STAGE 1 WALLET
+     * =======================================================
      */
 
     const wallet =
       await Wallet.create({
-        coinName:
-          coinName.trim(),
+        /*
+         * Coin Name is intentionally
+         * empty during Stage 1.
+         */
+
+        coinName: "",
 
         tradeId:
-          tradeId.trim(),
+          cleanTradeId,
 
         tradeIdNormalized:
           normalized,
 
         notes:
-          notes.trim(),
+          notes?.trim?.() ||
+          "",
 
         userId:
           req.user._id,
@@ -404,11 +852,17 @@ async function createWallet(
             at,
 
             detail:
-              `Wallet created by ${req.user.role} and sent to Stage 1.`,
+              `Wallet created by ${req.user.name} and sent to Stage 1.`,
           },
         ],
       });
 
+
+    /*
+     * =======================================================
+     * POPULATE BEFORE RETURNING
+     * =======================================================
+     */
 
     const populated =
       await populate(
@@ -427,6 +881,28 @@ async function createWallet(
         ),
     });
   } catch (error) {
+
+    /*
+     * =======================================================
+     * DUPLICATE DATABASE INDEX
+     *
+     * Handles simultaneous requests.
+     * =======================================================
+     */
+
+    if (
+      error?.code === 11000 &&
+      error?.keyPattern
+        ?.tradeIdNormalized
+    ) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This Trader ID is already used. Please enter a different Trader ID.",
+      });
+    }
+
+
     next(error);
   }
 }
@@ -449,11 +925,9 @@ async function stage1Decision(
 
 
     /*
-     * Only:
-     *
-     * Manager 1
-     * Manager 2
-     * Admin
+     * =======================================================
+     * MANAGER 1 / MANAGER 2 / ADMIN
+     * =======================================================
      */
 
     if (
@@ -468,7 +942,7 @@ async function stage1Decision(
       return res.status(403).json({
         success: false,
         message:
-          "Only managers and admin can approve Stage 1",
+          "Only Manager 1, Manager 2 and Admin can approve or reject Stage 1",
       });
     }
 
@@ -521,15 +995,10 @@ async function stage1Decision(
       new Date();
 
 
-    wallet.stage1ReviewedBy =
-      req.user._id;
-
-    wallet.stage1ReviewedAt =
-      at;
-
-
     /*
+     * =======================================================
      * APPROVE
+     * =======================================================
      */
 
     if (
@@ -539,6 +1008,13 @@ async function stage1Decision(
 
       wallet.status =
         STATUSES.PENDING_STAGE2;
+
+      wallet.stage1ReviewedBy =
+        req.user._id;
+
+      wallet.stage1ReviewedAt =
+        at;
+
 
       wallet.history.push({
         type:
@@ -563,7 +1039,9 @@ async function stage1Decision(
 
 
     /*
+     * =======================================================
      * REJECT
+     * =======================================================
      */
 
     if (
@@ -572,11 +1050,18 @@ async function stage1Decision(
       wallet.status =
         STATUSES.FAILED;
 
+      wallet.stage1ReviewedBy =
+        req.user._id;
+
+      wallet.stage1ReviewedAt =
+        at;
+
       wallet.failedBy =
         req.user._id;
 
       wallet.failedAt =
         at;
+
 
       wallet.history.push({
         type:
@@ -635,9 +1120,22 @@ async function submitStage2(
   next
 ) {
   try {
+    /*
+     * =======================================================
+     * STAGE 2 INPUTS
+     *
+     * Coin Name
+     * Entry Price
+     * Peak Price
+     * Exit Price
+     * =======================================================
+     */
+
     const {
-      costPrice,
-      soldPrice,
+      coinName,
+      entryPrice,
+      peakPrice,
+      exitPrice,
     } = req.body;
 
 
@@ -657,13 +1155,19 @@ async function submitStage2(
 
 
     /*
-     * ONLY the normal user who owns the wallet
-     * can submit Stage 2 CP / SP details.
+     * =======================================================
+     * ONLY WALLET OWNER / NORMAL USER
+     * =======================================================
      */
+
+    const ownerId =
+      wallet.userId
+        ?.toString?.();
+
+
     const canSubmit =
       req.user.role === "user" &&
-      wallet.userId
-        .toString() ===
+      ownerId ===
         req.user._id.toString();
 
 
@@ -671,10 +1175,16 @@ async function submitStage2(
       return res.status(403).json({
         success: false,
         message:
-          "You do not have permission to submit Stage 2 details",
+          "Only the user who created this wallet can submit Stage 2 details",
       });
     }
 
+
+    /*
+     * =======================================================
+     * MUST BE STAGE 2
+     * =======================================================
+     */
 
     if (
       wallet.stage !== 2 ||
@@ -689,9 +1199,16 @@ async function submitStage2(
     }
 
 
+    /*
+     * =======================================================
+     * PREVENT SECOND SUBMISSION
+     * =======================================================
+     */
+
     if (
-      wallet.costPrice != null ||
-      wallet.soldPrice != null
+      wallet.entryPrice != null ||
+      wallet.peakPrice != null ||
+      wallet.exitPrice != null
     ) {
       return res.status(400).json({
         success: false,
@@ -701,32 +1218,164 @@ async function submitStage2(
     }
 
 
-    const cost =
-      Number(costPrice);
-
-    const sold =
-      Number(soldPrice);
-
+    /*
+     * =======================================================
+     * VALIDATE COIN
+     * =======================================================
+     */
 
     if (
-      !Number.isFinite(cost) ||
-      cost < 0 ||
-      !Number.isFinite(sold) ||
-      sold < 0
+      !coinName ||
+      !coinName.trim()
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Valid cost price and sold price are required",
+          "Coin name is required",
       });
     }
 
 
+    /*
+     * =======================================================
+     * VALIDATE PRICES
+     * =======================================================
+     */
+
+    const entry =
+      Number(entryPrice);
+
+    const peak =
+      Number(peakPrice);
+
+    const exit =
+      Number(exitPrice);
+
+
+    if (
+      !Number.isFinite(entry) ||
+      entry <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Entry Price must be greater than 0",
+      });
+    }
+
+
+    if (
+      !Number.isFinite(peak) ||
+      peak < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Peak Price must be a valid non-negative number",
+      });
+    }
+
+
+    if (
+      !Number.isFinite(exit) ||
+      exit < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Exit Price must be a valid non-negative number",
+      });
+    }
+
+
+    /*
+     * =======================================================
+     * USER STRATEGY
+     *
+     * ((Peak - Entry) / Entry) × 100
+     * =======================================================
+     */
+
+    const userStrategy =
+      Number(
+        (
+          (
+            (peak - entry) /
+            entry
+          ) * 100
+        ).toFixed(2)
+      );
+
+
+    /*
+     * =======================================================
+     * TRADER STRATEGY
+     *
+     * ((Exit - Entry) / Entry) × 100
+     * =======================================================
+     */
+
+    const traderStrategy =
+      Number(
+        (
+          (
+            (exit - entry) /
+            entry
+          ) * 100
+        ).toFixed(2)
+      );
+
+
+    /*
+     * =======================================================
+     * SAVE STAGE 2 DATA
+     * =======================================================
+     */
+
+    wallet.coinName =
+      coinName.trim();
+
+    wallet.entryPrice =
+      entry;
+
+    wallet.peakPrice =
+      peak;
+
+    wallet.exitPrice =
+      exit;
+
+
+    /*
+     * Save both names so older
+     * frontend code also works.
+     */
+
+    wallet.userStrategyPL =
+      userStrategy;
+
+    wallet.traderStrategyPL =
+      traderStrategy;
+
+    wallet.userStrategy =
+      userStrategy;
+
+    wallet.traderStrategy =
+      traderStrategy;
+
+
+    /*
+     * Legacy compatibility
+     */
+
     wallet.costPrice =
-      cost;
+      entry;
 
     wallet.soldPrice =
-      sold;
+      exit;
+
+
+    const at =
+      new Date();
 
 
     wallet.history.push({
@@ -739,11 +1388,10 @@ async function submitStage2(
       by:
         req.user.name,
 
-      at:
-        new Date(),
+      at,
 
       detail:
-        `Stage 2 details submitted by ${req.user.name} (${req.user.role}). Cost Price: ${cost}. Sold Price: ${sold}.`,
+        `Stage 2 submitted by ${req.user.name}. User Strategy: ${userStrategy}%. Trader Strategy: ${traderStrategy}%.`,
     });
 
 
@@ -788,6 +1436,12 @@ async function stage2Decision(
     } = req.body;
 
 
+    /*
+     * =======================================================
+     * MANAGER 1 / MANAGER 2 / ADMIN
+     * =======================================================
+     */
+
     if (
       ![
         "manager1",
@@ -800,7 +1454,7 @@ async function stage2Decision(
       return res.status(403).json({
         success: false,
         message:
-          "Only managers and admin can approve Stage 2",
+          "Only Manager 1, Manager 2 and Admin can approve or reject Stage 2",
       });
     }
 
@@ -836,40 +1490,105 @@ async function stage2Decision(
     }
 
 
+    /*
+     * =======================================================
+     * MUST BE STAGE 2
+     * =======================================================
+     */
+
     if (
       wallet.stage !== 2 ||
       wallet.status !==
-        STATUSES.PENDING_STAGE2 ||
-      wallet.costPrice == null ||
-      wallet.soldPrice == null
+        STATUSES.PENDING_STAGE2
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "This wallet is not ready for Stage 2 approval",
+          "This wallet is not waiting for Stage 2 approval",
       });
     }
+
+
+    /*
+     * =======================================================
+     * ALL STAGE 2 DETAILS MUST EXIST
+     * =======================================================
+     */
+
+    if (
+      !wallet.coinName ||
+      wallet.entryPrice == null ||
+      wallet.peakPrice == null ||
+      wallet.exitPrice == null
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Stage 2 details must be submitted before approval",
+      });
+    }
+
+
+    /*
+     * Make sure strategies exist.
+     *
+     * This also supports old wallets that
+     * may have prices but not calculations.
+     */
+
+    if (
+      wallet.userStrategyPL == null
+    ) {
+      wallet.userStrategyPL =
+        Number(
+          (
+            (
+              (
+                wallet.peakPrice -
+                wallet.entryPrice
+              ) /
+              wallet.entryPrice
+            ) * 100
+          ).toFixed(2)
+        );
+    }
+
+
+    if (
+      wallet.traderStrategyPL == null
+    ) {
+      wallet.traderStrategyPL =
+        Number(
+          (
+            (
+              (
+                wallet.exitPrice -
+                wallet.entryPrice
+              ) /
+              wallet.entryPrice
+            ) * 100
+          ).toFixed(2)
+        );
+    }
+
+
+    wallet.userStrategy =
+      wallet.userStrategyPL;
+
+    wallet.traderStrategy =
+      wallet.traderStrategyPL;
 
 
     const at =
       new Date();
 
 
-    wallet.stage2ReviewedBy =
-      req.user._id;
-
-    wallet.stage2ReviewedAt =
-      at;
-
-
     /*
+     * =======================================================
      * APPROVE
      *
-     * IMPORTANT:
-     *
-     * Do NOT make it Successful.
-     *
-     * Move it to Stage 3.
+     * Stage 2 → Stage 3
+     * =======================================================
      */
 
     if (
@@ -879,6 +1598,13 @@ async function stage2Decision(
 
       wallet.status =
         STATUSES.PENDING_STAGE3;
+
+      wallet.stage2ReviewedBy =
+        req.user._id;
+
+      wallet.stage2ReviewedAt =
+        at;
+
 
       wallet.history.push({
         type:
@@ -903,7 +1629,9 @@ async function stage2Decision(
 
 
     /*
+     * =======================================================
      * REJECT
+     * =======================================================
      */
 
     if (
@@ -912,11 +1640,18 @@ async function stage2Decision(
       wallet.status =
         STATUSES.FAILED;
 
+      wallet.stage2ReviewedBy =
+        req.user._id;
+
+      wallet.stage2ReviewedAt =
+        at;
+
       wallet.failedBy =
         req.user._id;
 
       wallet.failedAt =
         at;
+
 
       wallet.history.push({
         type:
@@ -976,7 +1711,9 @@ async function stage3Decision(
 ) {
   try {
     /*
-     * ONLY ADMIN
+     * =======================================================
+     * ADMIN ONLY
+     * =======================================================
      */
 
     if (
@@ -1052,14 +1789,19 @@ async function stage3Decision(
 
 
     /*
+     * =======================================================
      * FINAL APPROVE
+     * =======================================================
      */
 
     if (
       decision === "approve"
     ) {
+      wallet.stage = 3;
+
       wallet.status =
         STATUSES.SUCCESSFUL;
+
 
       wallet.history.push({
         type:
@@ -1074,13 +1816,19 @@ async function stage3Decision(
         at,
 
         detail:
-          `Final Stage 3 approval completed by Admin ${req.user.name}. Wallet is now Successful.`,
+          `Final Stage 3 approval completed by Admin ${req.user.name}. Wallet is now Successful.${
+            note.trim()
+              ? ` Note: ${note.trim()}`
+              : ""
+          }`,
       });
     }
 
 
     /*
+     * =======================================================
      * FINAL REJECT
+     * =======================================================
      */
 
     if (
@@ -1094,6 +1842,7 @@ async function stage3Decision(
 
       wallet.failedAt =
         at;
+
 
       wallet.history.push({
         type:
@@ -1157,7 +1906,9 @@ async function addNote(
     } = req.body;
 
 
-    if (!note.trim()) {
+    if (
+      !note.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -1180,6 +1931,14 @@ async function addNote(
       });
     }
 
+
+    /*
+     * User can add notes only
+     * to their own wallet.
+     *
+     * Managers/Admin can add notes
+     * to any wallet.
+     */
 
     const allowed =
       req.user.role === "admin" ||
@@ -1248,18 +2007,11 @@ async function addNote(
 
 module.exports = {
   listWallets,
-
   getWallet,
-
   createWallet,
-
   stage1Decision,
-
   submitStage2,
-
   stage2Decision,
-
   stage3Decision,
-
   addNote,
 };

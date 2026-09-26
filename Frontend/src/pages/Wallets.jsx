@@ -31,6 +31,81 @@ const STATUS_OPTIONS = [
 ];
 
 
+/* =========================================================
+   STAGE 2 STRATEGY RANGES
+
+   0            = exactly 0%
+   0–50         = greater than 0% and up to 50%
+   50–100       = greater than 50% and up to 100%
+   Above 100    = greater than 100%
+
+   "All" keeps every Stage 2 wallet visible.
+========================================================= */
+
+const STRATEGY_RANGES = [
+  {
+    key: "all",
+    label: "All",
+  },
+  {
+    key: "zero",
+    label: "0",
+  },
+  {
+    key: "0-50",
+    label: "0–50",
+  },
+  {
+    key: "50-100",
+    label: "50–100",
+  },
+  {
+    key: "above-100",
+    label: "Above 100",
+  },
+];
+
+
+function matchesStrategyRange(
+  value,
+  range
+) {
+  if (range === "all") {
+    return true;
+  }
+
+  const number =
+    Number(value);
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    !Number.isFinite(number)
+  ) {
+    return false;
+  }
+
+  if (range === "zero") {
+    return number === 0;
+  }
+
+  if (range === "0-50") {
+    return number > 0 && number <= 50;
+  }
+
+  if (range === "50-100") {
+    return number > 50 && number <= 100;
+  }
+
+  if (range === "above-100") {
+    return number > 100;
+  }
+
+  return true;
+}
+
+
 export default function Wallets() {
   const {
     getWallets,
@@ -72,6 +147,25 @@ export default function Wallets() {
     search,
     setSearch,
   ] = useState("");
+
+
+  /*
+   * Stage 2 strategy filters.
+   *
+   * These are client-side filters because the Stage 2
+   * table already loads the complete Stage 2 dataset.
+   */
+
+  const [
+    userStrategyRange,
+    setUserStrategyRange,
+  ] = useState("all");
+
+
+  const [
+    traderStrategyRange,
+    setTraderStrategyRange,
+  ] = useState("all");
 
 
   const [
@@ -188,6 +282,66 @@ export default function Wallets() {
       ? "Wallet Pipeline"
       : status;
 
+  const isStage2 =
+    status === "Pending Stage 2";
+
+
+  /*
+   * =======================================================
+   * FILTERED STAGE 2 WALLETS
+   *
+   * Both strategy filters are applied together.
+   *
+   * Example:
+   *
+   * User Strategy = 0–50
+   * Trader Strategy = 50–100
+   *
+   * Only wallets matching BOTH ranges remain visible.
+   * =======================================================
+   */
+
+  const visibleWallets =
+    useMemo(() => {
+      if (!isStage2) {
+        return wallets;
+      }
+
+      return wallets.filter(
+        (wallet) => {
+          const userPL =
+            wallet.userStrategyPL ??
+            wallet.userStrategy;
+
+          const traderPL =
+            wallet.traderStrategyPL ??
+            wallet.traderStrategy;
+
+          return (
+            matchesStrategyRange(
+              userPL,
+              userStrategyRange
+            ) &&
+            matchesStrategyRange(
+              traderPL,
+              traderStrategyRange
+            )
+          );
+        }
+      );
+    }, [
+      wallets,
+      isStage2,
+      userStrategyRange,
+      traderStrategyRange,
+    ]);
+
+
+  function resetStrategyFilters() {
+    setUserStrategyRange("all");
+    setTraderStrategyRange("all");
+  }
+
 
   return (
     <div className="page">
@@ -292,6 +446,158 @@ export default function Wallets() {
 
 
       {/* =================================================
+          STAGE 2 STRATEGY FILTERS
+      ================================================= */}
+
+      {isStage2 && (
+        <section className="stage2-strategy-filter-panel">
+
+          {/* USER STRATEGY */}
+
+          <div className="stage2-strategy-filter-row">
+
+            <div className="stage2-strategy-filter-heading">
+
+              <span className="stage2-strategy-filter-title">
+                User Strategy
+              </span>
+
+              <span className="stage2-strategy-filter-value">
+                {
+                  STRATEGY_RANGES.find(
+                    (item) =>
+                      item.key ===
+                      userStrategyRange
+                  )?.label
+                }
+              </span>
+
+            </div>
+
+
+            <div
+              className="stage2-strategy-range-list"
+              aria-label="User Strategy range"
+            >
+
+              {STRATEGY_RANGES.map(
+                (item) => (
+                  <button
+                    key={`user-${item.key}`}
+                    type="button"
+                    className={`stage2-strategy-range ${
+                      userStrategyRange ===
+                      item.key
+                        ? "stage2-strategy-range--active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setUserStrategyRange(
+                        item.key
+                      )
+                    }
+                  >
+                    {item.label}
+                  </button>
+                )
+              )}
+
+            </div>
+
+          </div>
+
+
+          {/* TRADER STRATEGY */}
+
+          <div className="stage2-strategy-filter-row">
+
+            <div className="stage2-strategy-filter-heading">
+
+              <span className="stage2-strategy-filter-title">
+                Trader Strategy
+              </span>
+
+              <span className="stage2-strategy-filter-value">
+                {
+                  STRATEGY_RANGES.find(
+                    (item) =>
+                      item.key ===
+                      traderStrategyRange
+                  )?.label
+                }
+              </span>
+
+            </div>
+
+
+            <div
+              className="stage2-strategy-range-list"
+              aria-label="Trader Strategy range"
+            >
+
+              {STRATEGY_RANGES.map(
+                (item) => (
+                  <button
+                    key={`trader-${item.key}`}
+                    type="button"
+                    className={`stage2-strategy-range ${
+                      traderStrategyRange ===
+                      item.key
+                        ? "stage2-strategy-range--active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setTraderStrategyRange(
+                        item.key
+                      )
+                    }
+                  >
+                    {item.label}
+                  </button>
+                )
+              )}
+
+            </div>
+
+          </div>
+
+
+          {/* FILTER SUMMARY */}
+
+          <div className="stage2-strategy-filter-footer">
+
+            <span>
+              Showing{" "}
+              <strong>
+                {visibleWallets.length}
+              </strong>{" "}
+              of{" "}
+              <strong>
+                {wallets.length}
+              </strong>{" "}
+              Stage 2 wallets
+            </span>
+
+            {(userStrategyRange !== "all" ||
+              traderStrategyRange !== "all") && (
+              <button
+                type="button"
+                className="stage2-strategy-clear"
+                onClick={
+                  resetStrategyFilters
+                }
+              >
+                Clear filters
+              </button>
+            )}
+
+          </div>
+
+        </section>
+      )}
+
+
+      {/* =================================================
           SEARCH
       ================================================= */}
 
@@ -367,10 +673,13 @@ export default function Wallets() {
             </h2>
 
             <p className="page__hint">
-              {wallets.length} wallet
-              {wallets.length === 1
-                ? ""
-                : "s"}
+              {isStage2
+                ? `${visibleWallets.length} of ${wallets.length} wallets`
+                : `${wallets.length} wallet${
+                    wallets.length === 1
+                      ? ""
+                      : "s"
+                  }`}
             </p>
 
           </div>
@@ -388,146 +697,191 @@ export default function Wallets() {
 
           <div className="table-wrap">
 
-            <table className="data-table">
+            <table className={`data-table ${
+              isStage2
+                ? "data-table--stage2"
+                : ""
+            }`}>
 
               <thead>
 
-                <tr>
-
-                  <th>
-                    Coin
-                  </th>
-
-                  <th>
-                    Trade ID
-                  </th>
-
-                  <th>
-                    Created By
-                  </th>
-
-                  <th>
-                    Stage
-                  </th>
-
-                  <th>
-                    Status
-                  </th>
-
-                  <th>
-                    Updated
-                  </th>
-
-                  <th>
-                    Action
-                  </th>
-
-                </tr>
+                {isStage2 ? (
+                  <tr>
+                    <th>Coin</th>
+                    <th>Trade ID</th>
+                    <th>Entry Price</th>
+                    <th>Peak Price</th>
+                    <th>Exit Price</th>
+                    <th>User Strategy</th>
+                    <th>Trader Strategy</th>
+                    <th>Created By</th>
+                    <th>Action</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th>Coin</th>
+                    <th>Trade ID</th>
+                    <th>Created By</th>
+                    <th>Stage</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                  </tr>
+                )}
 
               </thead>
 
 
               <tbody>
 
-                {wallets.map(
-                  (wallet) => (
+                {visibleWallets.map(
+                  (wallet) => {
+                    const userPL =
+                      wallet.userStrategyPL;
 
-                    <tr
-                      key={
-                        wallet.id
-                      }
-                    >
+                    const traderPL =
+                      wallet.traderStrategyPL;
 
-                      <td>
-                        <strong>
-                          {
-                            wallet.coinName
-                          }
-                        </strong>
-                      </td>
+                    return (
+                      <tr
+                        key={wallet.id}
+                      >
 
-
-                      <td className="mono-cell">
-                        {
-                          wallet.tradeId
-                        }
-                      </td>
+                        <td>
+                          <strong>
+                            {wallet.coinName}
+                          </strong>
+                        </td>
 
 
-                      <td>
-
-                        <strong>
-                          {
-                            wallet.userName
-                          }
-                        </strong>
-
-                        <div className="table-sub">
-                          {
-                            wallet.creatorRole
-                          }
-                        </div>
-
-                      </td>
+                        <td className="mono-cell">
+                          {wallet.tradeId}
+                        </td>
 
 
-                      <td>
-                        <span className="badge">
-                          Stage{" "}
-                          {
-                            wallet.stage
-                          }
-                        </span>
-                      </td>
+                        {isStage2 ? (
+                          <>
+                            <td>
+                              {wallet.entryPrice != null
+                                ? wallet.entryPrice
+                                : "—"}
+                            </td>
 
+                            <td>
+                              {wallet.peakPrice != null
+                                ? wallet.peakPrice
+                                : "—"}
+                            </td>
 
-                      <td>
-                        <Badge
-                          status={
-                            wallet.status
-                          }
-                        />
-                      </td>
+                            <td>
+                              {wallet.exitPrice != null
+                                ? wallet.exitPrice
+                                : "—"}
+                            </td>
 
+                            <td>
+                              <span
+                                className={
+                                  userPL == null
+                                    ? "strategy-value"
+                                    : userPL >= 0
+                                      ? "strategy-value strategy-value--positive"
+                                      : "strategy-value strategy-value--negative"
+                                }
+                              >
+                                {userPL != null
+                                  ? `${userPL > 0 ? "+" : ""}${Number(userPL).toFixed(2)}%`
+                                  : "Pending"}
+                              </span>
+                            </td>
 
-                      <td>
-                        {formatDateTime(
-                          wallet.lastUpdated
+                            <td>
+                              <span
+                                className={
+                                  traderPL == null
+                                    ? "strategy-value"
+                                    : traderPL >= 0
+                                      ? "strategy-value strategy-value--positive"
+                                      : "strategy-value strategy-value--negative"
+                                }
+                              >
+                                {traderPL != null
+                                  ? `${traderPL > 0 ? "+" : ""}${Number(traderPL).toFixed(2)}%`
+                                  : "Pending"}
+                              </span>
+                            </td>
+
+                            <td>
+                              <strong>
+                                {wallet.userName || "—"}
+                              </strong>
+                              <div className="table-sub">
+                                {wallet.creatorRole || "user"}
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td>
+                              <strong>
+                                {wallet.userName}
+                              </strong>
+                              <div className="table-sub">
+                                {wallet.creatorRole}
+                              </div>
+                            </td>
+
+                            <td>
+                              <span className="badge">
+                                Stage {wallet.stage}
+                              </span>
+                            </td>
+
+                            <td>
+                              <Badge
+                                status={wallet.status}
+                              />
+                            </td>
+
+                            <td>
+                              {formatDateTime(
+                                wallet.lastUpdated
+                              )}
+                            </td>
+                          </>
                         )}
-                      </td>
 
 
-                      <td>
+                        <td>
+                          <Link
+                            to={`/wallets/${wallet.id}`}
+                            className="btn btn--small btn--primary"
+                          >
+                            View
+                          </Link>
+                        </td>
 
-                        <Link
-                          to={`/wallets/${wallet.id}`}
-                          className="btn btn--small btn--primary"
-                        >
-                          View
-                        </Link>
-
-                      </td>
-
-                    </tr>
-
-                  )
+                      </tr>
+                    );
+                  }
                 )}
 
 
-                {!wallets.length && (
-
+                {!visibleWallets.length && (
                   <tr>
-
                     <td
-                      colSpan="7"
+                      colSpan={isStage2 ? 9 : 7}
                       className="empty-row"
                     >
-                      No wallets found
-                      in this stage.
+                      {isStage2
+                        ? (
+                            wallets.length
+                              ? "No Stage 2 wallets match the selected strategy ranges."
+                              : "No wallets are currently waiting for Stage 2."
+                          )
+                        : "No wallets found in this stage."}
                     </td>
-
                   </tr>
-
                 )}
 
               </tbody>
@@ -537,7 +891,6 @@ export default function Wallets() {
           </div>
 
         )}
-
       </section>
 
     </div>

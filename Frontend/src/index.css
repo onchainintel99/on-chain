@@ -3817,3 +3817,819 @@ h3 {
   }
 
 }
+
+/* ================================================================
+   STAGE 2 STRATEGY BOARD
+   Shared visibility for users, managers and admin.
+================================================================ */
+
+.data-table--stage2 {
+  min-width: 1120px;
+}
+
+.data-table--stage2 th {
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: .02em;
+}
+
+.data-table--stage2 td {
+  vertical-align: middle;
+}
+
+.strategy-value {
+  display: inline-flex;
+  align-items: center;
+  min-width: 78px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel-raised);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.strategy-value--positive {
+  color: #42d3b0;
+  background: rgba(47, 191, 158, .10);
+  border-color: rgba(47, 191, 158, .28);
+}
+
+.strategy-value--negative {
+  color: #ef7770;
+  background: rgba(226, 102, 95, .10);
+  border-color: rgba(226, 102, 95, .28);
+}
+
+.strategy-positive {
+  color: #42d3b0 !important;
+}
+
+.strategy-negative {
+  color: #ef7770 !important;
+}
+
+.stage2-formula-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 22px;
+}
+
+.stage2-formula-strip > div {
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(62, 123, 250, .055);
+}
+
+.stage2-formula-strip span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.stage2-formula-strip strong {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stage2-fields--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.duplicate-wallet-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 14px 16px;
+  border: 1px solid rgba(226, 102, 95, .35);
+  border-radius: 8px;
+  background: rgba(226, 102, 95, .08);
+  color: #f0a09a;
+}
+
+.duplicate-wallet-alert__icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  background: rgba(226, 102, 95, .16);
+  color: #ef7770;
+  font-weight: 800;
+}
+
+.duplicate-wallet-alert strong {
+  display: block;
+  color: #f08a83;
+  font-size: 13px;
+}
+
+.duplicate-wallet-alert p {
+  margin: 3px 0 0;
+  color: #b99b99;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 980px) {
+  .stage2-fields--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stage2-formula-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .stage2-fields--four {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   STAGE 2 — PROFESSIONAL FORM
+========================================================= */
+
+.stage2-form-card {
+  width: 100%;
+  margin-top: 8px;
+  padding: 28px;
+
+  background: #111821;
+
+  border: 1px solid #263246;
+  border-radius: 14px;
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.18);
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.stage2-form-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  padding-bottom: 22px;
+
+  border-bottom: 1px solid #263246;
+}
+
+
+.stage2-form-eyebrow {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #e8b54d;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.14em;
+}
+
+
+.stage2-form-header h2 {
+  margin: 0;
+
+  color: #f1f5f9;
+
+  font-size: 22px;
+  font-weight: 700;
+}
+
+
+.stage2-form-header p {
+  max-width: 650px;
+
+  margin: 8px 0 0;
+
+  color: #8491a5;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+
+.stage2-form-status {
+  flex-shrink: 0;
+
+  padding: 7px 13px;
+
+  background: #352c19;
+
+  border: 1px solid #5c4925;
+  border-radius: 999px;
+
+  color: #e8b54d;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+}
+
+
+/* =========================================================
+   FORMULAS
+========================================================= */
+
+.stage2-formula-strip {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-top: 20px;
+}
+
+
+.stage2-formula {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  padding: 14px 16px;
+
+  background: #151e2c;
+
+  border: 1px solid #263246;
+  border-radius: 9px;
+}
+
+
+.stage2-formula span {
+  color: #8b99ae;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+.stage2-formula strong {
+  color: #dfe6ef;
+
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   FORM GRID
+========================================================= */
+
+.stage2-form {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+
+  padding-top: 24px;
+}
+
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+.stage2-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+
+.stage2-field span {
+  color: #9aa8bc;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.stage2-field span b {
+  margin-left: 3px;
+
+  color: #e8b54d;
+
+  font-weight: 700;
+}
+
+
+.stage2-field input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 14px;
+
+  box-sizing: border-box;
+
+  background: #172033;
+
+  border: 1px solid #2b3850;
+  border-radius: 8px;
+
+  color: #f1f5f9;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.stage2-field input::placeholder {
+  color: #59677b;
+}
+
+
+.stage2-field input:hover {
+  border-color: #394963;
+}
+
+
+.stage2-field input:focus {
+  background: #192338;
+
+  border-color: #e8b54d;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(232, 181, 77, 0.10);
+}
+
+
+/* Remove number input arrows */
+
+.stage2-field input::-webkit-outer-spin-button,
+.stage2-field input::-webkit-inner-spin-button {
+  margin: 0;
+
+  -webkit-appearance: none;
+}
+
+
+.stage2-field input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+
+/* =========================================================
+   STRATEGY PREVIEW
+========================================================= */
+
+.stage2-preview {
+  grid-column: 1 / -1;
+
+  margin-top: 2px;
+
+  padding: 18px;
+
+  background: #0f1722;
+
+  border: 1px solid #263246;
+  border-radius: 11px;
+}
+
+
+.stage2-preview__title {
+  margin-bottom: 14px;
+
+  color: #dce4ee;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+.stage2-preview__grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+
+/* =========================================================
+   STRATEGY CARD
+========================================================= */
+
+.strategy-preview-card {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  min-height: 110px;
+
+  padding: 16px;
+
+  background: #151f2e;
+
+  border: 1px solid #29374c;
+  border-radius: 9px;
+}
+
+
+.strategy-preview-card > span {
+  color: #8998ad;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.strategy-preview-card > strong {
+  color: #f1f5f9;
+
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 25px;
+  font-weight: 700;
+
+  line-height: 1.2;
+}
+
+
+.strategy-preview-card > small {
+  color: #64748b;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   STRATEGY COLORS
+========================================================= */
+
+.strategy-positive {
+  color: #33c9a8 !important;
+}
+
+
+.strategy-negative {
+  color: #e2665f !important;
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.stage2-form-error {
+  grid-column: 1 / -1;
+
+  margin: 0;
+
+  padding: 12px 14px;
+
+  background: #321d20;
+
+  border: 1px solid #5a2b30;
+  border-radius: 8px;
+
+  color: #ef7770;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   ACTION
+========================================================= */
+
+.stage2-form-actions {
+  grid-column: 1 / -1;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  padding-top: 4px;
+}
+
+
+.stage2-submit-btn {
+  min-height: 46px;
+
+  padding: 0 22px;
+
+  background: #e8b54d;
+
+  border: 1px solid #e8b54d;
+  border-radius: 8px;
+
+  color: #1a1305;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+
+
+.stage2-submit-btn:hover {
+  filter: brightness(1.08);
+
+  transform: translateY(-1px);
+}
+
+
+.stage2-submit-btn:active {
+  transform: translateY(0);
+}
+
+
+.stage2-submit-btn:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .stage2-form-card {
+    padding: 20px;
+  }
+
+
+  .stage2-form-header {
+    flex-direction: column;
+  }
+
+
+  .stage2-form-status {
+    align-self: flex-start;
+  }
+
+
+  .stage2-formula-strip {
+    grid-template-columns: 1fr;
+  }
+
+
+  .stage2-form {
+    grid-template-columns: 1fr;
+  }
+
+
+  .stage2-preview__grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .stage2-form-actions {
+    justify-content: stretch;
+  }
+
+
+  .stage2-submit-btn {
+    width: 100%;
+  }
+
+}
+
+
+@media (max-width: 500px) {
+
+  .stage2-form-card {
+    padding: 16px;
+  }
+
+
+  .stage2-form-header h2 {
+    font-size: 19px;
+  }
+
+
+  .stage2-formula {
+    padding: 12px;
+  }
+
+
+  .strategy-preview-card > strong {
+    font-size: 22px;
+  }
+
+}
+
+/* =========================================================
+   STAGE 2 STRATEGY RANGE FILTERS
+
+   Matches the compact segmented-control style used by
+   the leaderboard performance-period selector.
+========================================================= */
+
+.stage2-strategy-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg-panel);
+}
+
+.stage2-strategy-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+}
+
+.stage2-strategy-filter-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 175px;
+  padding-left: 9px;
+  white-space: nowrap;
+}
+
+.stage2-strategy-filter-title {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.stage2-strategy-filter-value {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stage2-strategy-range-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stage2-strategy-range-list::-webkit-scrollbar {
+  display: none;
+}
+
+.stage2-strategy-range {
+  padding: 9px 15px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color .18s ease,
+    background .18s ease,
+    border-color .18s ease,
+    transform .18s ease;
+}
+
+.stage2-strategy-range:hover {
+  color: var(--text);
+  background: var(--bg-panel-raised);
+}
+
+.stage2-strategy-range--active {
+  border-color: #294d8e;
+  background: #17305c;
+  color: #f1f6ff;
+  box-shadow:
+    inset 0 0 0 1px rgba(62, 123, 250, .08);
+}
+
+.stage2-strategy-range--active:hover {
+  background: #17305c;
+  color: #f1f6ff;
+}
+
+.stage2-strategy-filter-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 27px;
+  padding: 5px 9px 0;
+  border-top: 1px solid rgba(255, 255, 255, .045);
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.stage2-strategy-filter-footer strong {
+  color: var(--text-dim);
+  font-weight: 800;
+}
+
+.stage2-strategy-clear {
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stage2-strategy-clear:hover {
+  border-color: #31518a;
+  background: rgba(62, 123, 250, .07);
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .stage2-strategy-filter-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .stage2-strategy-filter-heading {
+    min-width: 0;
+    padding-left: 4px;
+  }
+
+  .stage2-strategy-range-list {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .stage2-strategy-filter-panel {
+    padding: 8px;
+  }
+
+  .stage2-strategy-range {
+    padding: 8px 11px;
+    font-size: 11px;
+  }
+
+  .stage2-strategy-filter-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-top: 8px;
+  }
+}
