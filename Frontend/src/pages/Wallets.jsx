@@ -41,6 +41,7 @@ const STATUS_OPTIONS = [
  */
 const STRATEGY_RANGES = [
   { key: "all", label: "All" },
+  { key: "below-0", label: "Below 0" },
   { key: "zero", label: "0" },
   { key: "0-50", label: "0–50" },
   { key: "51-100", label: "51–100" },
@@ -55,6 +56,7 @@ function matchesStrategyRange(value, range) {
 
   if (!Number.isFinite(number)) return false;
 
+  if (range === "below-0") return number < 0;
   if (range === "zero") return number === 0;
   if (range === "0-50") return number > 0 && number <= 50;
   if (range === "51-100") return number > 50 && number <= 100;
@@ -281,6 +283,7 @@ export default function Wallets() {
     strategyStats?.traderStrategy || {};
 
   const statColumns = [
+    ["below0", "Below 0"],
     ["zero", "0"],
     ["0to50", "0–50"],
     ["51to100", "51–100"],
@@ -509,8 +512,9 @@ export default function Wallets() {
             </div>
 
             <p className="stage2-strategy-stats-note">
-              Counts are calculated per coin entry, so one wallet containing
-              100 coins contributes 100 entries to these statistics.
+              Counts are calculated per coin entry. Negative values are
+              counted as Below 0, zero as 0, and positive values are grouped
+              into 0–50, 51–100, and Above 100.
             </p>
           </section>
         </>

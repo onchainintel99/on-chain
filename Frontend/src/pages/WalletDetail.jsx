@@ -153,6 +153,26 @@ function strategyClass(
 
 
 /* =========================================================
+   STAGE 2 STRATEGY STATISTICS
+========================================================= */
+
+const STAGE2_STAT_COLUMNS = [
+  ["below0", "Below 0"],
+  ["zero", "0"],
+  ["0to50", "0–50"],
+  ["51to100", "51–100"],
+  ["above100", "Above 100"],
+];
+
+function getStatsValue(
+  stats,
+  key
+) {
+  return stats?.[key] ?? 0;
+}
+
+
+/* =========================================================
    COMPONENT
 ========================================================= */
 
@@ -164,6 +184,7 @@ export default function WalletDetail() {
 
   const {
     getWallet,
+    getStrategyStats,
     stage1Decision,
     submitStage2,
     stage2Decision,
@@ -180,6 +201,18 @@ export default function WalletDetail() {
     wallet,
     setWallet,
   ] = useState(null);
+
+
+  const [
+    strategyStats,
+    setStrategyStats,
+  ] = useState(null);
+
+
+  const [
+    strategyStatsLoading,
+    setStrategyStatsLoading,
+  ] = useState(true);
 
 
   const [
@@ -283,8 +316,41 @@ export default function WalletDetail() {
   }
 
 
+  async function loadStrategyStats() {
+    try {
+      setStrategyStatsLoading(true);
+
+      const response =
+        await getStrategyStats();
+
+      setStrategyStats(
+        response?.strategyStats ||
+        null
+      );
+    } catch (err) {
+      /*
+       * The wallet page must remain usable even if
+       * the global statistics request temporarily fails.
+       */
+      setStrategyStats(null);
+    } finally {
+      setStrategyStatsLoading(false);
+    }
+  }
+
+
   useEffect(() => {
     loadWallet();
+    loadStrategyStats();
+
+    const interval =
+      setInterval(
+        loadStrategyStats,
+        5000
+      );
+
+    return () =>
+      clearInterval(interval);
   }, [id]);
 
 
@@ -1249,6 +1315,134 @@ export default function WalletDetail() {
           </div>
 
         )}
+
+      </section>
+
+
+      {/* =================================================
+          STAGE 2 STRATEGY STATISTICS
+
+          Visible to every authenticated role.
+      ================================================= */}
+
+      <section className="stage2-strategy-stats-panel">
+
+        <div className="stage2-strategy-stats-header">
+
+          <div>
+
+            <span className="stage2-strategy-stats-eyebrow">
+              STAGE 2 STATISTICS
+            </span>
+
+            <h2>
+              Strategy distribution across Stage 2 entries
+            </h2>
+
+          </div>
+
+          <div className="stage2-strategy-stats-total">
+
+            <span>
+              Total coin entries
+            </span>
+
+            <strong>
+              {
+                strategyStatsLoading
+                  ? "…"
+                  : strategyStats?.totalItems ?? 0
+              }
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <div className="stage2-strategy-stats-row">
+
+          <div className="stage2-strategy-stats-label">
+            User Strategy
+          </div>
+
+          {
+            STAGE2_STAT_COLUMNS.map(
+              ([key, label]) => (
+
+                <div
+                  className="stage2-strategy-stat-cell"
+                  key={`wallet-user-stat-${key}`}
+                >
+
+                  <span>
+                    {label}
+                  </span>
+
+                  <strong>
+                    {
+                      strategyStatsLoading
+                        ? "…"
+                        : getStatsValue(
+                            strategyStats?.userStrategy,
+                            key
+                          )
+                    }
+                  </strong>
+
+                </div>
+
+              )
+            )
+          }
+
+        </div>
+
+
+        <div className="stage2-strategy-stats-row">
+
+          <div className="stage2-strategy-stats-label">
+            Trader Strategy
+          </div>
+
+          {
+            STAGE2_STAT_COLUMNS.map(
+              ([key, label]) => (
+
+                <div
+                  className="stage2-strategy-stat-cell"
+                  key={`wallet-trader-stat-${key}`}
+                >
+
+                  <span>
+                    {label}
+                  </span>
+
+                  <strong>
+                    {
+                      strategyStatsLoading
+                        ? "…"
+                        : getStatsValue(
+                            strategyStats?.traderStrategy,
+                            key
+                          )
+                    }
+                  </strong>
+
+                </div>
+
+              )
+            )
+          }
+
+        </div>
+
+
+        <p className="stage2-strategy-stats-note">
+          Counts are calculated per coin entry. Negative values are
+          counted as Below 0, zero as 0, and positive values are grouped
+          into 0–50, 51–100, and Above 100.
+        </p>
 
       </section>
 

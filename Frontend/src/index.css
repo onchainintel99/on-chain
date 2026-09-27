@@ -4886,6 +4886,26 @@ h3 {
   line-height: 1.5;
 }
 
+.stage2-strategy-stat-cell {
+  overflow: hidden;
+}
+
+.stage2-strategy-stat-cell span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 760px) {
+  .stage2-strategy-stats-panel {
+    overflow-x: auto;
+  }
+
+  .stage2-strategy-stats-header,
+  .stage2-strategy-stats-row {
+    min-width: 760px;
+  }
+}
+
 .stage2-details-table-title {
   display: flex;
   align-items: center;

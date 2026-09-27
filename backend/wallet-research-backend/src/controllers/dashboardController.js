@@ -323,6 +323,12 @@ function strategyBucket(value) {
   }
 
   if (
+    number < 0
+  ) {
+    return "below0";
+  }
+
+  if (
     number === 0
   ) {
     return "zero";
@@ -351,6 +357,8 @@ function strategyBucket(value) {
 
 function emptyStrategyBuckets() {
   return {
+    below0: 0,
+
     zero: 0,
 
     "0to50": 0,
