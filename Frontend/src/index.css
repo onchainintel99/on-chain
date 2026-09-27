@@ -4779,6 +4779,42 @@ h3 {
    STAGE 2 — SHARED STATISTICS BOARD
 ================================================================ */
 
+.stage2-wallet-stats-list {
+  display: grid;
+  gap: 14px;
+}
+
+.stage2-wallet-stats-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg-panel);
+}
+
+.stage2-wallet-stats-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.stage2-wallet-stats-card-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+@media (max-width: 760px) {
+  .stage2-wallet-stats-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
 .stage2-strategy-stats-panel {
   margin-bottom: 18px;
   padding: 18px;

@@ -107,11 +107,58 @@ function getStatsValue(stats, key) {
   return stats?.[key] ?? 0;
 }
 
+function createEmptyStrategyStats() {
+  return {
+    below0: 0,
+    zero: 0,
+    "0to50": 0,
+    "51to100": 0,
+    above100: 0,
+  };
+}
+
+function calculateWalletStrategyStats(wallet) {
+  const userStrategy = createEmptyStrategyStats();
+  const traderStrategy = createEmptyStrategyStats();
+
+  const items = getStage2Items(wallet).filter(
+    (item) => item && item.coinName
+  );
+
+  const addToBucket = (stats, value) => {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return;
+
+    if (number < 0) stats.below0 += 1;
+    else if (number === 0) stats.zero += 1;
+    else if (number <= 50) stats["0to50"] += 1;
+    else if (number <= 100) stats["51to100"] += 1;
+    else stats.above100 += 1;
+  };
+
+  items.forEach((item) => {
+    addToBucket(
+      userStrategy,
+      item.userStrategyPL ?? item.userStrategy
+    );
+    addToBucket(
+      traderStrategy,
+      item.traderStrategyPL ?? item.traderStrategy
+    );
+  });
+
+  return {
+    totalItems: items.length,
+    userStrategy,
+    traderStrategy,
+  };
+}
+
 
 export default function Wallets() {
   const {
     getWallets,
-    getStrategyStats,
     currentUser,
   } = useData();
 
@@ -127,12 +174,10 @@ export default function Wallets() {
   );
 
   const [wallets, setWallets] = useState([]);
-  const [strategyStats, setStrategyStats] = useState(null);
   const [search, setSearch] = useState("");
   const [userStrategyRange, setUserStrategyRange] = useState("all");
   const [traderStrategyRange, setTraderStrategyRange] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState("");
 
   async function load() {
@@ -152,19 +197,14 @@ export default function Wallets() {
 
       params.set("limit", "200");
 
-      const [walletResponse, statsResponse] =
-        await Promise.all([
-          getWallets(params.toString()),
-          getStrategyStats(),
-        ]);
+      const walletResponse =
+        await getWallets(params.toString());
 
       setWallets(walletResponse.wallets || []);
-      setStrategyStats(statsResponse.strategyStats || null);
     } catch (err) {
       setError(err?.message || "Unable to load wallets.");
     } finally {
       setLoading(false);
-      setStatsLoading(false);
     }
   }
 
@@ -276,11 +316,6 @@ export default function Wallets() {
     setUserStrategyRange("all");
     setTraderStrategyRange("all");
   }
-
-  const userStats =
-    strategyStats?.userStrategy || {};
-  const traderStats =
-    strategyStats?.traderStrategy || {};
 
   const statColumns = [
     ["below0", "Below 0"],
@@ -446,9 +481,9 @@ export default function Wallets() {
           </section>
 
           {/* =================================================
-              STAGE 2 STRATEGY COUNT BOARD
+              STAGE 2 PER-WALLET STRATEGY COUNT BOARD
 
-              This is shared across all users, managers and admin.
+              Each wallet gets its own independent counts.
           ================================================= */}
           <section className="stage2-strategy-stats-panel">
             <div className="stage2-strategy-stats-header">
@@ -456,67 +491,82 @@ export default function Wallets() {
                 <span className="stage2-strategy-stats-eyebrow">
                   STAGE 2 STATISTICS
                 </span>
-                <h2>
-                  Strategy distribution across all Stage 2 entries
-                </h2>
-              </div>
-
-              <div className="stage2-strategy-stats-total">
-                <span>Total coin entries</span>
-                <strong>
-                  {statsLoading
-                    ? "…"
-                    : strategyStats?.totalItems ?? 0}
-                </strong>
+                <h2>Strategy distribution by wallet</h2>
               </div>
             </div>
 
-            <div className="stage2-strategy-stats-row">
-              <div className="stage2-strategy-stats-label">
-                User Strategy
+            {wallets.length === 0 ? (
+              <div className="stage2-strategy-stats-note">No Stage 2 wallets found.</div>
+            ) : (
+              <div className="stage2-wallet-stats-list">
+                {wallets.map((wallet) => {
+                  const stats = calculateWalletStrategyStats(wallet);
+
+                  return (
+                    <div
+                      className="stage2-wallet-stats-card"
+                      key={`wallet-stats-${wallet.id || wallet._id || wallet.tradeId}`}
+                    >
+                      <div className="stage2-wallet-stats-card-header">
+                        <div>
+                          <span className="stage2-strategy-stats-eyebrow">
+                            WALLET
+                          </span>
+                          <h3>
+                            {wallet.tradeId || wallet.id || "Wallet"}
+                          </h3>
+                        </div>
+
+                        <div className="stage2-strategy-stats-total">
+                          <span>Total coin entries</span>
+                          <strong>{stats.totalItems}</strong>
+                        </div>
+                      </div>
+
+                      <div className="stage2-strategy-stats-row">
+                        <div className="stage2-strategy-stats-label">
+                          User Strategy
+                        </div>
+
+                        {statColumns.map(([key, label]) => (
+                          <div
+                            className="stage2-strategy-stat-cell"
+                            key={`wallet-${wallet.id || wallet._id || wallet.tradeId}-user-${key}`}
+                          >
+                            <span>{label}</span>
+                            <strong>{getStatsValue(stats.userStrategy, key)}</strong>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="stage2-strategy-stats-row">
+                        <div className="stage2-strategy-stats-label">
+                          Trader Strategy
+                        </div>
+
+                        {statColumns.map(([key, label]) => (
+                          <div
+                            className="stage2-strategy-stat-cell"
+                            key={`wallet-${wallet.id || wallet._id || wallet.tradeId}-trader-${key}`}
+                          >
+                            <span>{label}</span>
+                            <strong>{getStatsValue(stats.traderStrategy, key)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-
-              {statColumns.map(([key, label]) => (
-                <div
-                  className="stage2-strategy-stat-cell"
-                  key={`user-stat-${key}`}
-                >
-                  <span>{label}</span>
-                  <strong>
-                    {statsLoading
-                      ? "…"
-                      : getStatsValue(userStats, key)}
-                  </strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="stage2-strategy-stats-row">
-              <div className="stage2-strategy-stats-label">
-                Trader Strategy
-              </div>
-
-              {statColumns.map(([key, label]) => (
-                <div
-                  className="stage2-strategy-stat-cell"
-                  key={`trader-stat-${key}`}
-                >
-                  <span>{label}</span>
-                  <strong>
-                    {statsLoading
-                      ? "…"
-                      : getStatsValue(traderStats, key)}
-                  </strong>
-                </div>
-              ))}
-            </div>
+            )}
 
             <p className="stage2-strategy-stats-note">
-              Counts are calculated per coin entry. Negative values are
-              counted as Below 0, zero as 0, and positive values are grouped
-              into 0–50, 51–100, and Above 100.
+              Counts are calculated separately for each wallet and per coin entry.
+              Negative values are Below 0, zero is 0, 0–50 is above 0 through 50,
+              51–100 is above 50 through 100, and Above 100 is greater than 100.
             </p>
           </section>
+
         </>
       )}
 
