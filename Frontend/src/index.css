@@ -4945,3 +4945,404 @@ h3 {
     flex-direction: column;
   }
 }
+/* =========================================================
+   STAGE 2 - ADD COIN
+========================================================= */
+
+.stage2-form-panel {
+  width: 100%;
+  max-width: 100%;
+  padding: 28px 32px;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.stage2-form-panel .panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stage2-form-panel .panel__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.stage2-form-panel .page__hint {
+  margin: 8px 0 0;
+  color: #71809a;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   SAVED COIN BADGE
+========================================================= */
+
+.stage2-form-panel .badge {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: 1px solid rgba(80, 140, 230, 0.25);
+  border-radius: 24px;
+  background: rgba(20, 35, 65, 0.55);
+  color: #91a4c3;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ERROR / SUCCESS
+========================================================= */
+
+.stage2-form-panel .form-error {
+  margin: 0 0 18px;
+  padding: 12px 15px;
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  border-radius: 8px;
+  background: rgba(255, 50, 50, 0.08);
+  color: #ff6969;
+  font-size: 14px;
+}
+
+.stage2-form-panel .form-success {
+  margin: 0 0 18px;
+  padding: 12px 15px;
+  border: 1px solid rgba(50, 210, 130, 0.25);
+  border-radius: 8px;
+  background: rgba(50, 210, 130, 0.08);
+  color: #55d99a;
+  font-size: 14px;
+}
+
+/* =========================================================
+   FORM GRID
+========================================================= */
+
+.stage2-form-panel .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 22px;
+}
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+.stage2-form-panel .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stage2-form-panel .field__label {
+  color: #a7b6ce;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stage2-form-panel .field__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 15px;
+  box-sizing: border-box;
+
+  border: 1px solid #26334a;
+  border-radius: 9px;
+
+  background: #151d2b;
+  color: #e8edf7;
+
+  font-size: 15px;
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.stage2-form-panel .field__input::placeholder {
+  color: #62718a;
+}
+
+.stage2-form-panel .field__input:hover {
+  border-color: #34445f;
+}
+
+.stage2-form-panel .field__input:focus {
+  border-color: #3478d8;
+  background: #172132;
+  box-shadow: 0 0 0 3px rgba(52, 120, 216, 0.12);
+}
+
+/* Remove number input arrows */
+
+.stage2-form-panel
+  .field__input[type="number"]::-webkit-inner-spin-button,
+.stage2-form-panel
+  .field__input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stage2-form-panel
+  .field__input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* =========================================================
+   STRATEGY PREVIEW
+========================================================= */
+
+.stage2-form-panel .strategy-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 22px;
+}
+
+.stage2-form-panel .strategy-box {
+  min-height: 76px;
+  padding: 15px 17px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  border: 1px solid #26334a;
+  border-radius: 10px;
+
+  background: #121a28;
+}
+
+.stage2-form-panel .strategy-box span {
+  color: #9aabc5;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stage2-form-panel .strategy-box strong {
+  color: #f0f4fb;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   SUBMIT AREA
+========================================================= */
+
+.stage2-form-panel .form-submit-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.stage2-form-panel .submit-coin-btn {
+  min-height: 46px;
+  padding: 0 20px;
+
+  border: 1px solid #3478d8;
+  border-radius: 8px;
+
+  background: #2866bd;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.stage2-form-panel .submit-coin-btn:hover:not(:disabled) {
+  background: #3478d8;
+  box-shadow: 0 5px 18px rgba(35, 105, 205, 0.25);
+}
+
+.stage2-form-panel .submit-coin-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.stage2-form-panel .submit-coin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   BACK BUTTON
+========================================================= */
+
+.stage2-form-panel .btn--secondary {
+  min-height: 46px;
+  padding: 0 20px;
+
+  border: 1px solid #2b394f;
+  border-radius: 8px;
+
+  background: #182131;
+  color: #c8d3e4;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.stage2-form-panel .btn--secondary:hover:not(:disabled) {
+  background: #202c3f;
+  border-color: #3a4b66;
+}
+
+.stage2-form-panel .btn--secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   SUBMITTED COINS
+========================================================= */
+
+.stage2-form-panel .stage2-saved-coins {
+  margin-top: 32px;
+  padding-top: 25px;
+  border-top: 1px solid #202b3d;
+}
+
+.stage2-form-panel .stage2-saved-coins .panel__header {
+  margin-bottom: 18px;
+}
+
+.stage2-form-panel .stage2-saved-coins .panel__title {
+  font-size: 21px;
+}
+
+/* =========================================================
+   INDIVIDUAL COIN CARD
+========================================================= */
+
+.stage2-form-panel .stage2-saved-coins > div:last-child > div {
+  background: #121a28;
+  border: 1px solid #26334a !important;
+  border-radius: 10px !important;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.stage2-form-panel
+  .stage2-saved-coins
+  > div:last-child
+  > div:hover {
+  border-color: #354661 !important;
+  background: #151f30;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.stage2-item-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 82px;
+  padding: 5px 11px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stage2-item-status--pending {
+  background: rgba(245, 180, 55, 0.12);
+  border: 1px solid rgba(245, 180, 55, 0.25);
+  color: #e7b84e;
+}
+
+.stage2-item-status--approved {
+  background: rgba(48, 210, 130, 0.12);
+  border: 1px solid rgba(48, 210, 130, 0.25);
+  color: #51d996;
+}
+
+.stage2-item-status--rejected {
+  background: rgba(255, 80, 80, 0.12);
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  color: #ff6f6f;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 800px) {
+  .stage2-form-panel {
+    padding: 22px 18px;
+  }
+
+  .stage2-form-panel .panel__header {
+    flex-direction: column;
+  }
+
+  .stage2-form-panel .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stage2-form-panel .strategy-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .stage2-form-panel .form-submit-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stage2-form-panel .submit-coin-btn,
+  .stage2-form-panel .btn--secondary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stage2-form-panel {
+    padding: 18px 14px;
+  }
+
+  .stage2-form-panel .panel__title {
+    font-size: 23px;
+  }
+
+  .stage2-form-panel .field__input {
+    height: 46px;
+  }
+
+  .stage2-form-panel .strategy-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
