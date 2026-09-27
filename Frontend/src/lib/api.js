@@ -36,23 +36,17 @@ async function request(
   path,
   options = {}
 ) {
-  const token =
-    getToken();
-
+  const token = getToken();
 
   const headers = {
-    "Content-Type":
-      "application/json",
-
+    "Content-Type": "application/json",
     ...(options.headers || {}),
   };
-
 
   if (token) {
     headers.Authorization =
       `Bearer ${token}`;
   }
-
 
   const response =
     await fetch(
@@ -63,14 +57,10 @@ async function request(
       }
     );
 
-
   const data =
     await response
       .json()
-      .catch(
-        () => ({})
-      );
-
+      .catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(
@@ -78,7 +68,6 @@ async function request(
         "Request failed"
     );
   }
-
 
   return data;
 }
@@ -88,45 +77,42 @@ async function request(
    AUTH
 ========================================================= */
 
-export const loginRequest =
-  (
-    email,
-    password
-  ) =>
-    request(
-      "/auth/login",
-      {
-        method: "POST",
+export const loginRequest = (
+  email,
+  password
+) =>
+  request(
+    "/auth/login",
+    {
+      method: "POST",
 
-        body:
-          JSON.stringify({
-            email,
-            password,
-          }),
-      }
-    );
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    }
+  );
 
 
-export const signupRequest =
-  (payload) =>
-    request(
-      "/auth/register",
-      {
-        method: "POST",
+export const signupRequest = (
+  payload
+) =>
+  request(
+    "/auth/register",
+    {
+      method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
-      }
-    );
+      body: JSON.stringify(
+        payload
+      ),
+    }
+  );
 
 
-export const meRequest =
-  () =>
-    request(
-      "/auth/me"
-    );
+export const meRequest = () =>
+  request(
+    "/auth/me"
+  );
 
 
 /* =========================================================
@@ -147,39 +133,71 @@ export const adminOverviewRequest =
     );
 
 
+/*
+ * =========================================================
+ * STAGE 2 STRATEGY STATISTICS
+ *
+ * Available to every authenticated role:
+ *
+ * user
+ * manager1
+ * manager2
+ * admin
+ *
+ * Used for:
+ *
+ * All
+ * 0
+ * 0-50
+ * 51-100
+ * Above 100
+ *
+ * =========================================================
+ */
+
+export const strategyStatsRequest =
+  () =>
+    request(
+      "/dashboard/strategy-stats"
+    );
+
+
 /* =========================================================
    WALLETS
 ========================================================= */
 
-export const walletsRequest =
-  (params = "") =>
-    request(
-      `/wallets${
-        params
-          ? `?${params}`
-          : ""
-      }`
-    );
+export const walletsRequest = (
+  params = ""
+) =>
+  request(
+    `/wallets${
+      params
+        ? `?${params}`
+        : ""
+    }`
+  );
 
 
-export const walletRequest =
-  (id) =>
-    request(
-      `/wallets/${id}`
-    );
+export const walletRequest = (
+  id
+) =>
+  request(
+    `/wallets/${id}`
+  );
 
 
 export const createWalletRequest =
-  (payload) =>
+  (
+    payload
+  ) =>
     request(
       "/wallets",
       {
         method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
@@ -198,34 +216,60 @@ export const stage1DecisionRequest =
       {
         method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
 
 /* =========================================================
-   STAGE 2 SUBMISSION
+   STAGE 2 - SUBMIT ONE COIN
 ========================================================= */
 
-export const stage2SubmitRequest =
-  (
-    id,
-    payload
-  ) =>
-    request(
-      `/wallets/${id}/stage2-submit`,
-      {
-        method: "POST",
+/*
+ * IMPORTANT
+ *
+ * We NO LONGER submit:
+ *
+ * {
+ *   items: [
+ *     {...},
+ *     {...},
+ *     {...}
+ *   ]
+ * }
+ *
+ * Instead, every request contains ONE coin:
+ *
+ * {
+ *   coinName: "Bitcoin",
+ *   entryPrice: 100,
+ *   peakPrice: 150,
+ *   exitPrice: 120
+ * }
+ *
+ * The backend appends this coin to:
+ *
+ * wallet.stage2Items
+ *
+ * =========================================================
+ */
 
-        body:
-          JSON.stringify(
-            payload
-          ),
-      }
-    );
+export const stage2SubmitRequest = (
+  id,
+  payload
+) =>
+  request(
+    `/wallets/${id}/stage2-submit`,
+    {
+      method: "POST",
+
+      body: JSON.stringify(
+        payload
+      ),
+    }
+  );
 
 
 /* =========================================================
@@ -242,10 +286,9 @@ export const stage2DecisionRequest =
       {
         method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
@@ -264,10 +307,9 @@ export const stage3DecisionRequest =
       {
         method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
@@ -276,22 +318,20 @@ export const stage3DecisionRequest =
    NOTES
 ========================================================= */
 
-export const addNoteRequest =
-  (
-    id,
-    payload
-  ) =>
-    request(
-      `/wallets/${id}/notes`,
-      {
-        method: "POST",
+export const addNoteRequest = (
+  id,
+  payload
+) =>
+  request(
+    `/wallets/${id}/notes`,
+    {
+      method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
-      }
-    );
+      body: JSON.stringify(
+        payload
+      ),
+    }
+  );
 
 
 /* =========================================================
@@ -299,25 +339,29 @@ export const addNoteRequest =
 ========================================================= */
 
 export const createStaffRequest =
-  (payload) =>
+  (
+    payload
+  ) =>
     request(
       "/admin/staff",
       {
         method: "POST",
 
-        body:
-          JSON.stringify(
-            payload
-          ),
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
-    /* =========================================================
+
+/* =========================================================
    LEADERBOARD
 ========================================================= */
 
 export const leaderboardRequest =
-  (range = "all") =>
+  (
+    range = "all"
+  ) =>
     request(
       `/dashboard/leaderboard?range=${encodeURIComponent(
         range

@@ -1,10 +1,12 @@
 const express = require("express");
 
-const router = express.Router();
+const router =
+  express.Router();
 
 const {
   overview,
   adminOverview,
+  strategyStats,
   leaderboard,
 } = require("../controllers/dashboardController");
 
@@ -12,7 +14,6 @@ const {
   protect,
   requireRole,
 } = require("../middleware/authMiddleware");
-
 
 /* =========================================================
    GENERAL DASHBOARD
@@ -23,7 +24,6 @@ router.get(
   protect,
   overview
 );
-
 
 /* =========================================================
    ADMIN DASHBOARD
@@ -36,9 +36,27 @@ router.get(
   adminOverview
 );
 
+/* =========================================================
+   STAGE 2 STRATEGY STATISTICS
+========================================================= */
+
+/*
+ * All authenticated roles can access:
+ *
+ * User
+ * Manager 1
+ * Manager 2
+ * Admin
+ */
+
+router.get(
+  "/strategy-stats",
+  protect,
+  strategyStats
+);
 
 /* =========================================================
-   TOP RESEARCHERS / LEADERBOARD
+   LEADERBOARD
 ========================================================= */
 
 router.get(
@@ -46,6 +64,5 @@ router.get(
   protect,
   leaderboard
 );
-
 
 module.exports = router;

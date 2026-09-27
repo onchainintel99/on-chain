@@ -5,7 +5,6 @@ const {
   STATUSES,
 } = require("../constants");
 
-
 /* =========================================================
    GENERAL DASHBOARD
 ========================================================= */
@@ -16,12 +15,6 @@ async function overview(
   next
 ) {
   try {
-    /*
-     * Users only see their own wallets.
-     *
-     * Managers + Admin see ALL wallets.
-     */
-
     const filter =
       req.user.role === "user"
         ? {
@@ -29,7 +22,6 @@ async function overview(
               req.user._id,
           }
         : {};
-
 
     const [
       total,
@@ -45,55 +37,44 @@ async function overview(
 
       Wallet.countDocuments({
         ...filter,
-
         status:
           STATUSES.PENDING_STAGE1,
       }),
 
       Wallet.countDocuments({
         ...filter,
-
         status:
           STATUSES.PENDING_STAGE2,
       }),
 
       Wallet.countDocuments({
         ...filter,
-
         status:
           STATUSES.PENDING_STAGE3,
       }),
 
       Wallet.countDocuments({
         ...filter,
-
         status:
           STATUSES.SUCCESSFUL,
       }),
 
       Wallet.countDocuments({
         ...filter,
-
         status:
           STATUSES.FAILED,
       }),
     ]);
-
 
     res.json({
       success: true,
 
       overview: {
         total,
-
         stage1,
-
         stage2,
-
         stage3,
-
         successful,
-
         failed,
       },
     });
@@ -101,7 +82,6 @@ async function overview(
     next(error);
   }
 }
-
 
 /* =========================================================
    ADMIN DASHBOARD
@@ -159,29 +139,17 @@ async function adminOverview(
           STATUSES.FAILED,
       }),
 
-      /*
-       * Only normal users/researchers
-       * are counted as researchers.
-       */
       User.countDocuments({
         role: "user",
       }),
 
       User.countDocuments({
         role: "user",
-
         lastLoginAt: {
           $ne: null,
         },
       }),
 
-      /*
-       * Only normal users/researchers
-       * are returned here.
-       *
-       * Managers and Admin are not
-       * included in researcher statistics.
-       */
       User.find({
         role: "user",
       })
@@ -193,13 +161,6 @@ async function adminOverview(
           createdAt: -1,
         }),
     ]);
-
-
-    /*
-     * =======================================================
-     * RESEARCHER / USER STATISTICS
-     * =======================================================
-     */
 
     const rows =
       await Promise.all(
@@ -219,20 +180,11 @@ async function adminOverview(
               userFailed,
             ] =
               await Promise.all([
-                /*
-                 * Total wallets created
-                 */
                 Wallet.countDocuments({
                   userId:
                     u._id,
                 }),
 
-                /*
-                 * Reached Stage 2
-                 *
-                 * Stage >= 2 means
-                 * Stage 1 was passed.
-                 */
                 Wallet.countDocuments({
                   userId:
                     u._id,
@@ -242,12 +194,6 @@ async function adminOverview(
                   },
                 }),
 
-                /*
-                 * Reached Stage 3
-                 *
-                 * Stage >= 3 means
-                 * Stage 2 was passed.
-                 */
                 Wallet.countDocuments({
                   userId:
                     u._id,
@@ -257,13 +203,6 @@ async function adminOverview(
                   },
                 }),
 
-                /*
-                 * Stage 3 completed successfully
-                 *
-                 * In the current workflow,
-                 * Successful means Admin
-                 * gave final approval.
-                 */
                 Wallet.countDocuments({
                   userId:
                     u._id,
@@ -272,9 +211,6 @@ async function adminOverview(
                     STATUSES.SUCCESSFUL,
                 }),
 
-                /*
-                 * Successful wallets
-                 */
                 Wallet.countDocuments({
                   userId:
                     u._id,
@@ -283,9 +219,6 @@ async function adminOverview(
                     STATUSES.SUCCESSFUL,
                 }),
 
-                /*
-                 * Rejected / failed wallets
-                 */
                 Wallet.countDocuments({
                   userId:
                     u._id,
@@ -294,7 +227,6 @@ async function adminOverview(
                     STATUSES.FAILED,
                 }),
               ]);
-
 
             return {
               id:
@@ -336,7 +268,6 @@ async function adminOverview(
         )
       );
 
-
     res.json({
       success: true,
 
@@ -365,9 +296,224 @@ async function adminOverview(
   }
 }
 
+/* =========================================================
+   STAGE 2 STRATEGY STATISTICS
+========================================================= */
+
+/*
+ * Categories requested by client:
+ *
+ * < 0
+ * = 0
+ * 0 - 50
+ * 51 - 100
+ * > 100
+ */
+
+function strategyBucket(value) {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(
+      number
+    )
+  ) {
+    return null;
+  }
+
+  if (
+    number === 0
+  ) {
+    return "zero";
+  }
+
+  if (
+    number > 0 &&
+    number <= 50
+  ) {
+    return "0to50";
+  }
+
+  if (
+    number > 50 &&
+    number <= 100
+  ) {
+    return "51to100";
+  }
+
+  return "above100";
+}
 
 /* =========================================================
-   TOP RESEARCHERS / LEADERBOARD
+   EMPTY BUCKETS
+========================================================= */
+
+function emptyStrategyBuckets() {
+  return {
+    zero: 0,
+
+    "0to50": 0,
+
+    "51to100": 0,
+
+    above100: 0,
+  };
+}
+
+/* =========================================================
+   STRATEGY STATISTICS
+========================================================= */
+
+async function strategyStats(
+  req,
+  res,
+  next
+) {
+  try {
+    /*
+     * IMPORTANT:
+     *
+     * No user filter here.
+     *
+     * This means:
+     *
+     * User
+     * Manager 1
+     * Manager 2
+     * Admin
+     *
+     * all receive the same global Stage 2
+     * statistics.
+     */
+
+    const wallets =
+      await Wallet.find({
+        stage: 2,
+
+        status:
+          STATUSES.PENDING_STAGE2,
+      })
+        .select(
+          "stage2Items coinName entryPrice peakPrice exitPrice userStrategyPL traderStrategyPL userStrategy traderStrategy"
+        )
+        .lean();
+
+    const userStrategy =
+      emptyStrategyBuckets();
+
+    const traderStrategy =
+      emptyStrategyBuckets();
+
+    let totalItems = 0;
+
+    /*
+     * Process every wallet.
+     */
+
+    for (
+      const wallet of wallets
+    ) {
+      /*
+       * New wallets:
+       * use stage2Items.
+       *
+       * Old wallets:
+       * convert the old single entry.
+       */
+
+      const items =
+        Array.isArray(
+          wallet.stage2Items
+        ) &&
+        wallet.stage2Items.length
+          ? wallet.stage2Items
+          : wallet.coinName &&
+            wallet.entryPrice != null &&
+            wallet.peakPrice != null &&
+            wallet.exitPrice != null
+          ? [
+              {
+                userStrategyPL:
+                  wallet.userStrategyPL ??
+                  wallet.userStrategy,
+
+                traderStrategyPL:
+                  wallet.traderStrategyPL ??
+                  wallet.traderStrategy,
+              },
+            ]
+          : [];
+
+      /*
+       * Strategy distribution is counted per coin submission.
+       * The wallet list itself still counts unique wallets.
+       */
+
+      totalItems +=
+        items.length;
+
+      for (
+        const item of items
+      ) {
+        const userBucket =
+          strategyBucket(
+            item.userStrategyPL ??
+              item.userStrategy
+          );
+
+        const traderBucket =
+          strategyBucket(
+            item.traderStrategyPL ??
+              item.traderStrategy
+          );
+
+        if (
+          userBucket
+        ) {
+          userStrategy[
+            userBucket
+          ] += 1;
+        }
+
+        if (
+          traderBucket
+        ) {
+          traderStrategy[
+            traderBucket
+          ] += 1;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+
+      strategyStats: {
+        /*
+         * Number of Stage 2 wallets
+         */
+        totalWallets:
+          wallets.length,
+
+        /*
+         * Number of individual
+         * coin entries.
+         */
+        totalItems,
+
+        userStrategy,
+
+        traderStrategy,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* =========================================================
+   LEADERBOARD
 ========================================================= */
 
 async function leaderboard(
@@ -376,20 +522,9 @@ async function leaderboard(
   next
 ) {
   try {
-    /*
-     * Supported ranges:
-     *
-     * today
-     * week
-     * month
-     * last30
-     * last90
-     * all
-     */
-
     const range =
-      req.query.range || "all";
-
+      req.query.range ||
+      "all";
 
     const allowedRanges = [
       "today",
@@ -399,7 +534,6 @@ async function leaderboard(
       "last90",
       "all",
     ];
-
 
     if (
       !allowedRanges.includes(
@@ -414,20 +548,15 @@ async function leaderboard(
       });
     }
 
-
-    /*
-     * =======================================================
-     * DATE FILTER
-     * =======================================================
-     */
-
-    let startDate = null;
+    let startDate =
+      null;
 
     const now =
       new Date();
 
-
-    if (range === "today") {
+    if (
+      range === "today"
+    ) {
       startDate =
         new Date(now);
 
@@ -439,14 +568,12 @@ async function leaderboard(
       );
     }
 
-
-    if (range === "week") {
+    if (
+      range === "week"
+    ) {
       startDate =
         new Date(now);
 
-      /*
-       * Monday = start of week
-       */
       const day =
         startDate.getDay();
 
@@ -468,8 +595,9 @@ async function leaderboard(
       );
     }
 
-
-    if (range === "month") {
+    if (
+      range === "month"
+    ) {
       startDate =
         new Date(
           now.getFullYear(),
@@ -478,8 +606,9 @@ async function leaderboard(
         );
     }
 
-
-    if (range === "last30") {
+    if (
+      range === "last30"
+    ) {
       startDate =
         new Date(now);
 
@@ -489,8 +618,9 @@ async function leaderboard(
       );
     }
 
-
-    if (range === "last90") {
+    if (
+      range === "last90"
+    ) {
       startDate =
         new Date(now);
 
@@ -500,31 +630,18 @@ async function leaderboard(
       );
     }
 
-
-    /*
-     * =======================================================
-     * WALLET DATE FILTER
-     * =======================================================
-     *
-     * Wallets are filtered using createdAt.
-     */
-
     const walletFilter =
       startDate
         ? {
             createdAt: {
-              $gte: startDate,
-              $lte: now,
+              $gte:
+                startDate,
+
+              $lte:
+                now,
             },
           }
         : {};
-
-
-    /*
-     * =======================================================
-     * GET ALL NORMAL USERS
-     * =======================================================
-     */
 
     const researchers =
       await User.find({
@@ -537,24 +654,18 @@ async function leaderboard(
           name: 1,
         });
 
-
-    /*
-     * =======================================================
-     * CALCULATE RESEARCHER PERFORMANCE
-     * =======================================================
-     */
-
     const leaderboardRows =
       await Promise.all(
         researchers.map(
-          async (researcher) => {
+          async (
+            researcher
+          ) => {
             const baseFilter = {
               ...walletFilter,
 
               userId:
                 researcher._id,
             };
-
 
             const [
               walletsAdded,
@@ -568,17 +679,10 @@ async function leaderboard(
               rejected,
             ] =
               await Promise.all([
-                /*
-                 * Total wallets added
-                 */
                 Wallet.countDocuments(
                   baseFilter
                 ),
 
-                /*
-                 * Wallets that reached
-                 * Stage 2
-                 */
                 Wallet.countDocuments({
                   ...baseFilter,
 
@@ -587,10 +691,6 @@ async function leaderboard(
                   },
                 }),
 
-                /*
-                 * Wallets that reached
-                 * Stage 3
-                 */
                 Wallet.countDocuments({
                   ...baseFilter,
 
@@ -599,10 +699,6 @@ async function leaderboard(
                   },
                 }),
 
-                /*
-                 * Successfully completed
-                 * wallets
-                 */
                 Wallet.countDocuments({
                   ...baseFilter,
 
@@ -610,9 +706,6 @@ async function leaderboard(
                     STATUSES.SUCCESSFUL,
                 }),
 
-                /*
-                 * Rejected wallets
-                 */
                 Wallet.countDocuments({
                   ...baseFilter,
 
@@ -621,24 +714,18 @@ async function leaderboard(
                 }),
               ]);
 
-
-            /*
-             * Success rate:
-             *
-             * Successful / Wallets Added * 100
-             */
-
             const successRate =
               walletsAdded > 0
                 ? Number(
                     (
-                      (successful /
-                        walletsAdded) *
+                      (
+                        successful /
+                        walletsAdded
+                      ) *
                       100
                     ).toFixed(2)
                   )
                 : 0;
-
 
             return {
               id:
@@ -666,29 +753,6 @@ async function leaderboard(
         )
       );
 
-
-    /*
-     * =======================================================
-     * SORT LEADERBOARD
-     * =======================================================
-     *
-     * Primary:
-     * Successful wallets
-     *
-     * Secondary:
-     * Stage 3
-     *
-     * Third:
-     * Stage 2
-     *
-     * Fourth:
-     * Wallets added
-     *
-     * This gives researchers with more
-     * completed successful wallets a
-     * higher position.
-     */
-
     leaderboardRows.sort(
       (a, b) => {
         if (
@@ -701,7 +765,6 @@ async function leaderboard(
           );
         }
 
-
         if (
           b.stage3 !==
           a.stage3
@@ -711,7 +774,6 @@ async function leaderboard(
             a.stage3
           );
         }
-
 
         if (
           b.stage2 !==
@@ -723,20 +785,12 @@ async function leaderboard(
           );
         }
 
-
         return (
           b.walletsAdded -
           a.walletsAdded
         );
       }
     );
-
-
-    /*
-     * =======================================================
-     * ADD RANK
-     * =======================================================
-     */
 
     const rankedResearchers =
       leaderboardRows.map(
@@ -750,13 +804,6 @@ async function leaderboard(
           ...researcher,
         })
       );
-
-
-    /*
-     * =======================================================
-     * OVERALL TEAM STATISTICS
-     * =======================================================
-     */
 
     const [
       totalWallets,
@@ -811,13 +858,6 @@ async function leaderboard(
       }),
     ]);
 
-
-    /*
-     * =======================================================
-     * FINAL RESPONSE
-     * =======================================================
-     */
-
     res.json({
       success: true,
 
@@ -853,13 +893,13 @@ async function leaderboard(
   }
 }
 
-
 /* =========================================================
-   EXPORTS
+   EXPORT
 ========================================================= */
 
 module.exports = {
   overview,
   adminOverview,
+  strategyStats,
   leaderboard,
 };

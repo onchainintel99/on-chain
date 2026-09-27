@@ -14,6 +14,7 @@ import {
 
   overviewRequest,
   adminOverviewRequest,
+  strategyStatsRequest,
   leaderboardRequest,
 
   walletsRequest,
@@ -154,6 +155,9 @@ export function DataProvider({
 
     getAdminOverview:
       adminOverviewRequest,
+
+    getStrategyStats:
+      strategyStatsRequest,
     
     /* Leaderboard */
 

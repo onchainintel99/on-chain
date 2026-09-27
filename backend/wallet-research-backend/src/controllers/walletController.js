@@ -7,9 +7,8 @@ const {
   HISTORY_TYPES,
 } = require("../constants");
 
-
 /* =========================================================
-   POPULATE WALLET
+   POPULATE
 ========================================================= */
 
 const populate = (query) =>
@@ -39,140 +38,60 @@ const populate = (query) =>
       "name email role"
     );
 
-
 /* =========================================================
-   HELPER — OBJECT ID
+   HELPERS
 ========================================================= */
 
-function objectIdToString(
-  value
-) {
-  if (!value) {
-    return "";
-  }
+function objectIdToString(value) {
+  if (!value) return "";
 
-  if (
-    typeof value === "string"
-  ) {
+  if (typeof value === "string") {
     return value;
   }
 
-  if (
-    value._id
-  ) {
+  if (value._id) {
     return value._id.toString();
   }
 
-  if (
-    value.id
-  ) {
+  if (value.id) {
     return value.id.toString();
   }
 
-  if (
-    value.toString
-  ) {
-    return value.toString();
+  return value.toString();
+}
+
+function getUserName(value) {
+  if (!value) return "";
+
+  if (typeof value === "object") {
+    return value.name || value.email || "";
   }
 
   return "";
 }
 
-
 /* =========================================================
-   HELPER — USER NAME
+   RESPONSE FORMAT
 ========================================================= */
 
-function getUserName(
-  value
-) {
-  if (!value) {
-    return "";
-  }
+function walletResponse(wallet) {
+  if (!wallet) return null;
 
-  /*
-   * Populated User object
-   */
-
-  if (
-    typeof value === "object"
-  ) {
-    return (
-      value.name ||
-      value.email ||
-      ""
-    );
-  }
-
-  return "";
-}
-
-
-/* =========================================================
-   WALLET RESPONSE
-========================================================= */
-
-/*
- * IMPORTANT:
- *
- * DO NOT convert populated userId into only
- * the MongoDB ObjectId.
- *
- * The frontend needs:
- *
- * wallet.userName
- * wallet.userEmail
- * wallet.userRole
- *
- * so that it can display:
- *
- * Created By → Bhuvan
- *
- * instead of:
- *
- * Created By → 6ab36c073...
- */
-
-function walletResponse(
-  wallet
-) {
-  if (!wallet) {
-    return null;
-  }
-
-
-  const data =
-    wallet.toObject
-      ? wallet.toObject()
-      : wallet;
-
-
-  /* =======================================================
-     CREATOR
-  ======================================================= */
+  const data = wallet.toObject
+    ? wallet.toObject()
+    : wallet;
 
   const creatorId =
-    objectIdToString(
-      data.userId
-    );
+    objectIdToString(data.userId);
 
   const creatorName =
-    getUserName(
-      data.userId
-    );
+    getUserName(data.userId);
 
   const creatorEmail =
-    data.userId?.email ||
-    "";
+    data.userId?.email || "";
 
   const creatorRole =
-    data.userId?.role ||
-    "";
-
-
-  /* =======================================================
-     STAGE 1 REVIEWER
-  ======================================================= */
+    data.userId?.role || "";
 
   const stage1ReviewerId =
     objectIdToString(
@@ -185,17 +104,10 @@ function walletResponse(
     );
 
   const stage1ReviewerEmail =
-    data.stage1ReviewedBy?.email ||
-    "";
+    data.stage1ReviewedBy?.email || "";
 
   const stage1ReviewerRole =
-    data.stage1ReviewedBy?.role ||
-    "";
-
-
-  /* =======================================================
-     STAGE 2 REVIEWER
-  ======================================================= */
+    data.stage1ReviewedBy?.role || "";
 
   const stage2ReviewerId =
     objectIdToString(
@@ -208,17 +120,10 @@ function walletResponse(
     );
 
   const stage2ReviewerEmail =
-    data.stage2ReviewedBy?.email ||
-    "";
+    data.stage2ReviewedBy?.email || "";
 
   const stage2ReviewerRole =
-    data.stage2ReviewedBy?.role ||
-    "";
-
-
-  /* =======================================================
-     STAGE 3 REVIEWER
-  ======================================================= */
+    data.stage2ReviewedBy?.role || "";
 
   const stage3ReviewerId =
     objectIdToString(
@@ -231,40 +136,73 @@ function walletResponse(
     );
 
   const stage3ReviewerEmail =
-    data.stage3ReviewedBy?.email ||
-    "";
+    data.stage3ReviewedBy?.email || "";
 
   const stage3ReviewerRole =
-    data.stage3ReviewedBy?.role ||
-    "";
-
-
-  /* =======================================================
-     FAILED BY
-  ======================================================= */
+    data.stage3ReviewedBy?.role || "";
 
   const failedById =
-    objectIdToString(
-      data.failedBy
-    );
+    objectIdToString(data.failedBy);
 
   const failedByName =
-    getUserName(
-      data.failedBy
-    );
+    getUserName(data.failedBy);
 
   const failedByEmail =
-    data.failedBy?.email ||
-    "";
+    data.failedBy?.email || "";
 
   const failedByRole =
-    data.failedBy?.role ||
-    "";
+    data.failedBy?.role || "";
 
+  /*
+   * New multiple Stage 2 items.
+   *
+   * Legacy wallets are converted
+   * into one item for display.
+   */
 
-  /* =======================================================
-     RETURN
-  ======================================================= */
+  const stage2Items =
+    Array.isArray(data.stage2Items) &&
+    data.stage2Items.length
+      ? data.stage2Items
+      : data.coinName &&
+        data.entryPrice != null &&
+        data.peakPrice != null &&
+        data.exitPrice != null
+      ? [
+          {
+            coinName: data.coinName,
+
+            entryPrice:
+              data.entryPrice,
+
+            peakPrice:
+              data.peakPrice,
+
+            exitPrice:
+              data.exitPrice,
+
+            userStrategyPL:
+              data.userStrategyPL ??
+              data.userStrategy ??
+              null,
+
+            traderStrategyPL:
+              data.traderStrategyPL ??
+              data.traderStrategy ??
+              null,
+
+            userStrategy:
+              data.userStrategy ??
+              data.userStrategyPL ??
+              null,
+
+            traderStrategy:
+              data.traderStrategy ??
+              data.traderStrategyPL ??
+              null,
+          },
+        ]
+      : [];
 
   return {
     ...data,
@@ -273,20 +211,16 @@ function walletResponse(
       data._id?.toString?.() ||
       data.id,
 
+    stage2Items,
 
-    /*
-     * KEEP THE POPULATED USER OBJECT
-     *
-     * This is important for the frontend.
-     */
+    stage2Completed:
+      data.stage2Completed === true,
+
+    stage2CompletedAt:
+      data.stage2CompletedAt || null,
 
     userId:
       data.userId || null,
-
-
-    /*
-     * Flat creator information
-     */
 
     userIdString:
       creatorId,
@@ -300,14 +234,8 @@ function walletResponse(
     userRole:
       creatorRole,
 
-
-    /*
-     * Stage 1 reviewer
-     */
-
     stage1ReviewedBy:
-      data.stage1ReviewedBy ||
-      null,
+      data.stage1ReviewedBy || null,
 
     stage1ReviewedById:
       stage1ReviewerId,
@@ -321,14 +249,8 @@ function walletResponse(
     stage1ReviewedByRole:
       stage1ReviewerRole,
 
-
-    /*
-     * Stage 2 reviewer
-     */
-
     stage2ReviewedBy:
-      data.stage2ReviewedBy ||
-      null,
+      data.stage2ReviewedBy || null,
 
     stage2ReviewedById:
       stage2ReviewerId,
@@ -342,14 +264,8 @@ function walletResponse(
     stage2ReviewedByRole:
       stage2ReviewerRole,
 
-
-    /*
-     * Stage 3 reviewer
-     */
-
     stage3ReviewedBy:
-      data.stage3ReviewedBy ||
-      null,
+      data.stage3ReviewedBy || null,
 
     stage3ReviewedById:
       stage3ReviewerId,
@@ -363,56 +279,30 @@ function walletResponse(
     stage3ReviewedByRole:
       stage3ReviewerRole,
 
-
-    /*
-     * Failed by
-     */
-
     failedBy:
-      data.failedBy ||
-      null,
+      data.failedBy || null,
 
-    failedById:
-      failedById,
+    failedById,
 
-    failedByName:
-      failedByName,
+    failedByName,
 
-    failedByEmail:
-      failedByEmail,
+    failedByEmail,
 
-    failedByRole:
-      failedByRole,
+    failedByRole,
   };
 }
-
 
 /* =========================================================
    STAGE 2 VISIBILITY
 ========================================================= */
 
-/*
- * Stage 2 wallets are visible to:
- *
- * User
- * Manager 1
- * Manager 2
- * Admin
- *
- * This is required because Stage 2
- * strategy information is a shared review view.
- */
-
-function isStage2Wallet(
-  wallet
-) {
+function isStage2Wallet(wallet) {
   return (
     wallet?.stage === 2 &&
     wallet?.status ===
       STATUSES.PENDING_STAGE2
   );
 }
-
 
 /* =========================================================
    LIST WALLETS
@@ -433,26 +323,14 @@ async function listWallets(
       limit = 100,
     } = req.query;
 
-
     const filter = {};
-
-
-    /* =======================================================
-       STATUS FILTER
-    ======================================================= */
 
     if (
       status &&
       status !== "All"
     ) {
-      filter.status =
-        status;
+      filter.status = status;
     }
-
-
-    /* =======================================================
-       STAGE FILTER
-    ======================================================= */
 
     if (
       stage &&
@@ -471,26 +349,10 @@ async function listWallets(
       }
     }
 
-
-    /*
-     * =======================================================
-     * NORMAL USER VISIBILITY
-     *
-     * Normal users:
-     *
-     * - Own wallets normally
-     * - All wallets while they are in Stage 2
-     *
-     * Managers/Admin:
-     * - All wallets
-     * =======================================================
-     */
-
     const isStage2Request =
       stage === "2" ||
       status ===
         STATUSES.PENDING_STAGE2;
-
 
     if (
       req.user.role === "user" &&
@@ -500,12 +362,6 @@ async function listWallets(
         req.user._id;
     }
 
-
-    /*
-     * mine=true explicitly means
-     * current user's wallets.
-     */
-
     if (
       mine === "true"
     ) {
@@ -513,17 +369,11 @@ async function listWallets(
         req.user._id;
     }
 
-
-    /* =======================================================
-       SEARCH
-    ======================================================= */
-
     if (
       search.trim()
     ) {
       const q =
         search.trim();
-
 
       filter.$or = [
         {
@@ -532,7 +382,12 @@ async function listWallets(
             $options: "i",
           },
         },
-
+        {
+          "stage2Items.coinName": {
+            $regex: q,
+            $options: "i",
+          },
+        },
         {
           tradeId: {
             $regex: q,
@@ -541,11 +396,6 @@ async function listWallets(
         },
       ];
     }
-
-
-    /* =======================================================
-       PAGINATION
-    ======================================================= */
 
     const safeLimit =
       Math.min(
@@ -556,13 +406,11 @@ async function listWallets(
         200
       );
 
-
     const safePage =
       Math.max(
         Number(page) || 1,
         1
       );
-
 
     const [
       wallets,
@@ -574,20 +422,16 @@ async function listWallets(
             updatedAt: -1,
           })
           .skip(
-            (
-              safePage - 1
-            ) * safeLimit
+            (safePage - 1) *
+              safeLimit
           )
-          .limit(
-            safeLimit
-          )
+          .limit(safeLimit)
       ),
 
       Wallet.countDocuments(
         filter
       ),
     ]);
-
 
     res.json({
       success: true,
@@ -618,9 +462,8 @@ async function listWallets(
   }
 }
 
-
 /* =========================================================
-   GET SINGLE WALLET
+   GET WALLET
 ========================================================= */
 
 async function getWallet(
@@ -641,14 +484,12 @@ async function getWallet(
       });
     }
 
-
     const wallet =
       await populate(
         Wallet.findById(
           req.params.id
         )
       );
-
 
     if (!wallet) {
       return res.status(404).json({
@@ -658,20 +499,6 @@ async function getWallet(
       });
     }
 
-
-    /*
-     * =======================================================
-     * USER VISIBILITY
-     *
-     * Normal users can:
-     *
-     * 1. View their own wallets
-     *
-     * 2. View Stage 2 wallets because
-     *    Stage 2 is a shared review view.
-     * =======================================================
-     */
-
     if (
       req.user.role === "user"
     ) {
@@ -679,17 +506,12 @@ async function getWallet(
         wallet.userId?._id?.toString?.() ||
         wallet.userId?.toString?.();
 
-
       const ownWallet =
         ownerId ===
         req.user._id.toString();
 
-
       const sharedStage2 =
-        isStage2Wallet(
-          wallet
-        );
-
+        isStage2Wallet(wallet);
 
       if (
         !ownWallet &&
@@ -702,7 +524,6 @@ async function getWallet(
         });
       }
     }
-
 
     res.json({
       success: true,
@@ -717,7 +538,6 @@ async function getWallet(
   }
 }
 
-
 /* =========================================================
    CREATE WALLET
 ========================================================= */
@@ -728,12 +548,6 @@ async function createWallet(
   next
 ) {
   try {
-    /*
-     * =======================================================
-     * ONLY NORMAL USER
-     * =======================================================
-     */
-
     if (
       req.user.role !== "user"
     ) {
@@ -744,20 +558,10 @@ async function createWallet(
       });
     }
 
-
     const {
       tradeId,
       notes = "",
     } = req.body;
-
-
-    /*
-     * =======================================================
-     * STAGE 1 ONLY NEEDS TRADE ID
-     *
-     * NO COIN NAME
-     * =======================================================
-     */
 
     if (
       !tradeId ||
@@ -770,27 +574,17 @@ async function createWallet(
       });
     }
 
-
     const cleanTradeId =
       tradeId.trim();
 
-
     const normalized =
       cleanTradeId.toLowerCase();
-
-
-    /*
-     * =======================================================
-     * DUPLICATE TRADE ID CHECK
-     * =======================================================
-     */
 
     const existing =
       await Wallet.findOne({
         tradeIdNormalized:
           normalized,
       });
-
 
     if (existing) {
       return res.status(409).json({
@@ -800,24 +594,11 @@ async function createWallet(
       });
     }
 
-
     const at =
       new Date();
 
-
-    /*
-     * =======================================================
-     * CREATE STAGE 1 WALLET
-     * =======================================================
-     */
-
     const wallet =
       await Wallet.create({
-        /*
-         * Coin Name is intentionally
-         * empty during Stage 1.
-         */
-
         coinName: "",
 
         tradeId:
@@ -857,20 +638,12 @@ async function createWallet(
         ],
       });
 
-
-    /*
-     * =======================================================
-     * POPULATE BEFORE RETURNING
-     * =======================================================
-     */
-
     const populated =
       await populate(
         Wallet.findById(
           wallet._id
         )
       );
-
 
     res.status(201).json({
       success: true,
@@ -881,15 +654,6 @@ async function createWallet(
         ),
     });
   } catch (error) {
-
-    /*
-     * =======================================================
-     * DUPLICATE DATABASE INDEX
-     *
-     * Handles simultaneous requests.
-     * =======================================================
-     */
-
     if (
       error?.code === 11000 &&
       error?.keyPattern
@@ -902,11 +666,9 @@ async function createWallet(
       });
     }
 
-
     next(error);
   }
 }
-
 
 /* =========================================================
    STAGE 1 DECISION
@@ -922,13 +684,6 @@ async function stage1Decision(
       decision,
       note = "",
     } = req.body;
-
-
-    /*
-     * =======================================================
-     * MANAGER 1 / MANAGER 2 / ADMIN
-     * =======================================================
-     */
 
     if (
       ![
@@ -946,7 +701,6 @@ async function stage1Decision(
       });
     }
 
-
     if (
       ![
         "approve",
@@ -962,12 +716,10 @@ async function stage1Decision(
       });
     }
 
-
     const wallet =
       await Wallet.findById(
         req.params.id
       );
-
 
     if (!wallet) {
       return res.status(404).json({
@@ -976,7 +728,6 @@ async function stage1Decision(
           "Wallet not found",
       });
     }
-
 
     if (
       wallet.stage !== 1 ||
@@ -990,16 +741,8 @@ async function stage1Decision(
       });
     }
 
-
     const at =
       new Date();
-
-
-    /*
-     * =======================================================
-     * APPROVE
-     * =======================================================
-     */
 
     if (
       decision === "approve"
@@ -1009,12 +752,17 @@ async function stage1Decision(
       wallet.status =
         STATUSES.PENDING_STAGE2;
 
+      wallet.stage2Completed =
+        false;
+
+      wallet.stage2CompletedAt =
+        null;
+
       wallet.stage1ReviewedBy =
         req.user._id;
 
       wallet.stage1ReviewedAt =
         at;
-
 
       wallet.history.push({
         type:
@@ -1037,13 +785,6 @@ async function stage1Decision(
       });
     }
 
-
-    /*
-     * =======================================================
-     * REJECT
-     * =======================================================
-     */
-
     if (
       decision === "reject"
     ) {
@@ -1061,7 +802,6 @@ async function stage1Decision(
 
       wallet.failedAt =
         at;
-
 
       wallet.history.push({
         type:
@@ -1084,9 +824,7 @@ async function stage1Decision(
       });
     }
 
-
     await wallet.save();
-
 
     const populated =
       await populate(
@@ -1094,7 +832,6 @@ async function stage1Decision(
           wallet._id
         )
       );
-
 
     res.json({
       success: true,
@@ -1109,9 +846,8 @@ async function stage1Decision(
   }
 }
 
-
 /* =========================================================
-   SUBMIT STAGE 2
+   SUBMIT ONE STAGE 2 COIN
 ========================================================= */
 
 async function submitStage2(
@@ -1120,71 +856,40 @@ async function submitStage2(
   next
 ) {
   try {
-    /*
-     * =======================================================
-     * STAGE 2 INPUTS
-     *
-     * Coin Name
-     * Entry Price
-     * Peak Price
-     * Exit Price
-     * =======================================================
-     */
-
-    const {
-      coinName,
-      entryPrice,
-      peakPrice,
-      exitPrice,
-    } = req.body;
-
-
     const wallet =
       await Wallet.findById(
         req.params.id
       );
 
-
     if (!wallet) {
       return res.status(404).json({
         success: false,
-        message:
-          "Wallet not found",
+        message: "Wallet not found",
       });
     }
 
-
-    /*
-     * =======================================================
-     * ONLY WALLET OWNER / NORMAL USER
-     * =======================================================
-     */
+    // =================================================
+    // ONLY OWNER CAN SUBMIT
+    // =================================================
 
     const ownerId =
-      wallet.userId
-        ?.toString?.();
+      wallet.userId?.toString?.();
 
-
-    const canSubmit =
-      req.user.role === "user" &&
-      ownerId ===
-        req.user._id.toString();
-
-
-    if (!canSubmit) {
+    if (
+      req.user.role !== "user" ||
+      ownerId !==
+        req.user._id.toString()
+    ) {
       return res.status(403).json({
         success: false,
         message:
-          "Only the user who created this wallet can submit Stage 2 details",
+          "Only the wallet owner can submit Stage 2 details",
       });
     }
 
-
-    /*
-     * =======================================================
-     * MUST BE STAGE 2
-     * =======================================================
-     */
+    // =================================================
+    // MUST BE STAGE 2
+    // =================================================
 
     if (
       wallet.stage !== 2 ||
@@ -1198,59 +903,41 @@ async function submitStage2(
       });
     }
 
+    // =================================================
+    // ONE COIN PER REQUEST
+    // =================================================
 
-    /*
-     * =======================================================
-     * PREVENT SECOND SUBMISSION
-     * =======================================================
-     */
+    const cleanCoinName =
+      String(
+        req.body.coinName || ""
+      ).trim();
 
-    if (
-      wallet.entryPrice != null ||
-      wallet.peakPrice != null ||
-      wallet.exitPrice != null
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Stage 2 details have already been submitted",
-      });
-    }
+    const entry =
+      Number(
+        req.body.entryPrice
+      );
 
+    const peak =
+      Number(
+        req.body.peakPrice
+      );
 
-    /*
-     * =======================================================
-     * VALIDATE COIN
-     * =======================================================
-     */
+    const exit =
+      Number(
+        req.body.exitPrice
+      );
 
-    if (
-      !coinName ||
-      !coinName.trim()
-    ) {
+    // =================================================
+    // VALIDATION
+    // =================================================
+
+    if (!cleanCoinName) {
       return res.status(400).json({
         success: false,
         message:
           "Coin name is required",
       });
     }
-
-
-    /*
-     * =======================================================
-     * VALIDATE PRICES
-     * =======================================================
-     */
-
-    const entry =
-      Number(entryPrice);
-
-    const peak =
-      Number(peakPrice);
-
-    const exit =
-      Number(exitPrice);
-
 
     if (
       !Number.isFinite(entry) ||
@@ -1259,10 +946,9 @@ async function submitStage2(
       return res.status(400).json({
         success: false,
         message:
-          "Entry Price must be greater than 0",
+          "Entry price must be greater than 0",
       });
     }
-
 
     if (
       !Number.isFinite(peak) ||
@@ -1271,10 +957,9 @@ async function submitStage2(
       return res.status(400).json({
         success: false,
         message:
-          "Peak Price must be a valid non-negative number",
+          "Peak price is invalid",
       });
     }
-
 
     if (
       !Number.isFinite(exit) ||
@@ -1283,57 +968,108 @@ async function submitStage2(
       return res.status(400).json({
         success: false,
         message:
-          "Exit Price must be a valid non-negative number",
+          "Exit price is invalid",
       });
     }
 
-
-    /*
-     * =======================================================
-     * USER STRATEGY
-     *
-     * ((Peak - Entry) / Entry) × 100
-     * =======================================================
-     */
+    // =================================================
+    // STRATEGY CALCULATIONS
+    // =================================================
 
     const userStrategy =
       Number(
         (
-          (
-            (peak - entry) /
-            entry
-          ) * 100
+          ((peak - entry) /
+            entry) *
+          100
         ).toFixed(2)
       );
-
-
-    /*
-     * =======================================================
-     * TRADER STRATEGY
-     *
-     * ((Exit - Entry) / Entry) × 100
-     * =======================================================
-     */
 
     const traderStrategy =
       Number(
         (
-          (
-            (exit - entry) /
-            entry
-          ) * 100
+          ((exit - entry) /
+            entry) *
+          100
         ).toFixed(2)
       );
 
+    // =================================================
+    // CREATE INDIVIDUAL SUBMISSION
+    // =================================================
 
-    /*
-     * =======================================================
-     * SAVE STAGE 2 DATA
-     * =======================================================
-     */
+    const submission = {
+      coinName:
+        cleanCoinName,
+
+      entryPrice:
+        entry,
+
+      peakPrice:
+        peak,
+
+      exitPrice:
+        exit,
+
+      userStrategyPL:
+        userStrategy,
+
+      traderStrategyPL:
+        traderStrategy,
+
+      userStrategy:
+        userStrategy,
+
+      traderStrategy:
+        traderStrategy,
+
+      status:
+        "Pending",
+
+      decision:
+        null,
+
+      reviewedBy:
+        null,
+
+      reviewedByName:
+        "",
+
+      reviewedByEmail:
+        "",
+
+      reviewedAt:
+        null,
+
+      reviewNote:
+        "",
+
+      submittedAt:
+        new Date(),
+    };
+
+    // =================================================
+    // APPEND — DO NOT REPLACE
+    // =================================================
+
+    if (
+      !Array.isArray(
+        wallet.stage2Items
+      )
+    ) {
+      wallet.stage2Items = [];
+    }
+
+    wallet.stage2Items.push(
+      submission
+    );
+
+    // =================================================
+    // KEEP LATEST VALUES FOR OLD UI
+    // =================================================
 
     wallet.coinName =
-      coinName.trim();
+      cleanCoinName;
 
     wallet.entryPrice =
       entry;
@@ -1343,12 +1079,6 @@ async function submitStage2(
 
     wallet.exitPrice =
       exit;
-
-
-    /*
-     * Save both names so older
-     * frontend code also works.
-     */
 
     wallet.userStrategyPL =
       userStrategy;
@@ -1362,21 +1092,9 @@ async function submitStage2(
     wallet.traderStrategy =
       traderStrategy;
 
-
-    /*
-     * Legacy compatibility
-     */
-
-    wallet.costPrice =
-      entry;
-
-    wallet.soldPrice =
-      exit;
-
-
-    const at =
-      new Date();
-
+    // =================================================
+    // HISTORY
+    // =================================================
 
     wallet.history.push({
       type:
@@ -1388,15 +1106,18 @@ async function submitStage2(
       by:
         req.user.name,
 
-      at,
+      at:
+        new Date(),
 
       detail:
-        `Stage 2 submitted by ${req.user.name}. User Strategy: ${userStrategy}%. Trader Strategy: ${traderStrategy}%.`,
+        `Stage 2 coin ${cleanCoinName} submitted by ${req.user.name}.`,
     });
 
+    // =================================================
+    // SAVE
+    // =================================================
 
     await wallet.save();
-
 
     const populated =
       await populate(
@@ -1405,9 +1126,16 @@ async function submitStage2(
         )
       );
 
-
-    res.json({
+    return res.json({
       success: true,
+
+      message:
+        "Stage 2 coin submitted successfully",
+
+      submission:
+        wallet.stage2Items[
+          wallet.stage2Items.length - 1
+        ],
 
       wallet:
         walletResponse(
@@ -1419,6 +1147,146 @@ async function submitStage2(
   }
 }
 
+/* =========================================================
+   COMPLETE STAGE 2
+========================================================= */
+
+async function completeStage2(
+  req,
+  res,
+  next
+) {
+  try {
+    const wallet =
+      await Wallet.findById(
+        req.params.id
+      );
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Wallet not found",
+      });
+    }
+
+    /* -----------------------------------------------------
+       OWNER CHECK
+    ----------------------------------------------------- */
+
+    const ownerId =
+      wallet.userId?.toString?.();
+
+    if (
+      req.user.role !== "user" ||
+      ownerId !==
+        req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Only the user who created this wallet can finish Stage 2",
+      });
+    }
+
+    /* -----------------------------------------------------
+       STAGE CHECK
+    ----------------------------------------------------- */
+
+    if (
+      wallet.stage !== 2 ||
+      wallet.status !==
+        STATUSES.PENDING_STAGE2
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This wallet is not currently in Stage 2",
+      });
+    }
+
+    /* -----------------------------------------------------
+       ALREADY COMPLETED
+    ----------------------------------------------------- */
+
+    if (
+      wallet.stage2Completed === true
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Stage 2 has already been completed",
+      });
+    }
+
+    /* -----------------------------------------------------
+       REQUIRE AT LEAST ONE COIN
+    ----------------------------------------------------- */
+
+    if (
+      !Array.isArray(
+        wallet.stage2Items
+      ) ||
+      wallet.stage2Items.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please add at least one coin before finishing Stage 2",
+      });
+    }
+
+    /* -----------------------------------------------------
+       COMPLETE
+    ----------------------------------------------------- */
+
+    wallet.stage2Completed =
+      true;
+
+    wallet.stage2CompletedAt =
+      new Date();
+
+    wallet.history.push({
+      type:
+        HISTORY_TYPES.STAGE2_SUBMITTED,
+
+      byUser:
+        req.user._id,
+
+      by:
+        req.user.name,
+
+      at:
+        new Date(),
+
+      detail:
+        `Stage 2 completed by ${req.user.name} with ${wallet.stage2Items.length} coin(s).`,
+    });
+
+    await wallet.save();
+
+    const populated =
+      await populate(
+        Wallet.findById(
+          wallet._id
+        )
+      );
+
+    return res.json({
+      success: true,
+
+      message:
+        "Stage 2 completed successfully. Waiting for Manager approval.",
+
+      wallet:
+        walletResponse(
+          populated
+        ),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /* =========================================================
    STAGE 2 DECISION
@@ -1433,18 +1301,15 @@ async function stage2Decision(
     const {
       decision,
       note = "",
+      submissionId,
     } = req.body;
 
-
-    /*
-     * =======================================================
-     * MANAGER 1 / MANAGER 2 / ADMIN
-     * =======================================================
-     */
+    /* -----------------------------------------------------
+       ROLE
+    ----------------------------------------------------- */
 
     if (
       ![
-        "manager1",
         "manager2",
         "admin",
       ].includes(
@@ -1454,10 +1319,13 @@ async function stage2Decision(
       return res.status(403).json({
         success: false,
         message:
-          "Only Manager 1, Manager 2 and Admin can approve or reject Stage 2",
+          "Only Manager 2 or Admin can review individual Stage 2 coins",
       });
     }
 
+    /* -----------------------------------------------------
+       DECISION
+    ----------------------------------------------------- */
 
     if (
       ![
@@ -1474,12 +1342,22 @@ async function stage2Decision(
       });
     }
 
+    /* -----------------------------------------------------
+       SUBMISSION ID
+    ----------------------------------------------------- */
+
+    if (!submissionId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Stage 2 submissionId is required",
+      });
+    }
 
     const wallet =
       await Wallet.findById(
         req.params.id
       );
-
 
     if (!wallet) {
       return res.status(404).json({
@@ -1489,12 +1367,9 @@ async function stage2Decision(
       });
     }
 
-
-    /*
-     * =======================================================
-     * MUST BE STAGE 2
-     * =======================================================
-     */
+    /* -----------------------------------------------------
+       STAGE CHECK
+    ----------------------------------------------------- */
 
     if (
       wallet.stage !== 2 ||
@@ -1504,97 +1379,216 @@ async function stage2Decision(
       return res.status(400).json({
         success: false,
         message:
-          "This wallet is not waiting for Stage 2 approval",
+          "This wallet is not waiting for Stage 2 review",
       });
     }
 
-
-    /*
-     * =======================================================
-     * ALL STAGE 2 DETAILS MUST EXIST
-     * =======================================================
-     */
+    /* -----------------------------------------------------
+       ITEMS CHECK
+    ----------------------------------------------------- */
 
     if (
-      !wallet.coinName ||
-      wallet.entryPrice == null ||
-      wallet.peakPrice == null ||
-      wallet.exitPrice == null
+      !Array.isArray(
+        wallet.stage2Items
+      ) ||
+      wallet.stage2Items.length === 0
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Stage 2 details must be submitted before approval",
+          "Stage 2 has no coin submissions",
       });
     }
 
+    /* -----------------------------------------------------
+       FIND INDIVIDUAL COIN
+    ----------------------------------------------------- */
 
-    /*
-     * Make sure strategies exist.
-     *
-     * This also supports old wallets that
-     * may have prices but not calculations.
-     */
+    const item =
+      wallet.stage2Items.id(
+        submissionId
+      );
 
-    if (
-      wallet.userStrategyPL == null
-    ) {
-      wallet.userStrategyPL =
-        Number(
-          (
-            (
-              (
-                wallet.peakPrice -
-                wallet.entryPrice
-              ) /
-              wallet.entryPrice
-            ) * 100
-          ).toFixed(2)
-        );
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Stage 2 coin submission not found",
+      });
     }
 
+    /* -----------------------------------------------------
+       PREVENT DOUBLE REVIEW
+    ----------------------------------------------------- */
 
     if (
-      wallet.traderStrategyPL == null
+      item.status !==
+      "Pending"
     ) {
-      wallet.traderStrategyPL =
-        Number(
-          (
-            (
-              (
-                wallet.exitPrice -
-                wallet.entryPrice
-              ) /
-              wallet.entryPrice
-            ) * 100
-          ).toFixed(2)
-        );
+      return res.status(400).json({
+        success: false,
+        message:
+          `This coin has already been ${String(item.status).toLowerCase()}`,
+      });
     }
-
-
-    wallet.userStrategy =
-      wallet.userStrategyPL;
-
-    wallet.traderStrategy =
-      wallet.traderStrategyPL;
-
 
     const at =
       new Date();
 
+    const cleanNote =
+      String(
+        note || ""
+      ).trim();
 
-    /*
-     * =======================================================
-     * APPROVE
-     *
-     * Stage 2 → Stage 3
-     * =======================================================
-     */
+    /* -----------------------------------------------------
+       UPDATE ONLY THIS COIN
+    ----------------------------------------------------- */
+
+    item.status =
+      decision === "approve"
+        ? "Approved"
+        : "Rejected";
+
+    item.decision =
+      decision;
+
+    item.reviewedBy =
+      req.user._id;
+
+    item.reviewedByName =
+      req.user.name ||
+      req.user.email ||
+      "";
+
+    item.reviewedByEmail =
+      req.user.email ||
+      "";
+
+    item.reviewedAt =
+      at;
+
+    item.reviewNote =
+      cleanNote;
+
+    /* -----------------------------------------------------
+       HISTORY
+    ----------------------------------------------------- */
+
+    wallet.history.push({
+      type:
+        decision === "approve"
+          ? HISTORY_TYPES.STAGE2_APPROVED
+          : HISTORY_TYPES.STAGE2_REJECTED,
+
+      byUser:
+        req.user._id,
+
+      by:
+        req.user.name,
+
+      at,
+
+      detail:
+        `Stage 2 coin ${item.coinName} ${decision === "approve" ? "approved" : "rejected"} by ${req.user.name} (${req.user.role}).${
+          cleanNote
+            ? ` ${cleanNote}`
+            : ""
+        }`,
+    });
+
+    /* -----------------------------------------------------
+       IF THIS COIN IS REJECTED:
+       KEEP THE WALLET IN STAGE 2.
+
+       Other coins are NOT affected.
+    ----------------------------------------------------- */
 
     if (
-      decision === "approve"
+      decision === "reject"
     ) {
-      wallet.stage = 3;
+      await wallet.save();
+
+      const populated =
+        await populate(
+          Wallet.findById(
+            wallet._id
+          )
+        );
+
+      return res.json({
+        success: true,
+
+        message:
+          `Stage 2 coin ${item.coinName} rejected. Other coins remain unchanged.`,
+
+        submission:
+          item,
+
+        wallet:
+          walletResponse(
+            populated
+          ),
+      });
+    }
+
+    /* -----------------------------------------------------
+       CHECK WHETHER EVERY SUBMITTED COIN IS APPROVED
+    ----------------------------------------------------- */
+
+    const allApproved =
+      wallet.stage2Items.length > 0 &&
+      wallet.stage2Items.every(
+        (stage2Item) =>
+          stage2Item.status ===
+          "Approved"
+      );
+
+    if (
+      allApproved
+    ) {
+      const first =
+        wallet.stage2Items[0];
+
+      /* -----------------------------------------------
+         KEEP LEGACY/LATEST VALUES
+      ----------------------------------------------- */
+
+      wallet.coinName =
+        first.coinName;
+
+      wallet.entryPrice =
+        first.entryPrice;
+
+      wallet.peakPrice =
+        first.peakPrice;
+
+      wallet.exitPrice =
+        first.exitPrice;
+
+      wallet.userStrategyPL =
+        first.userStrategyPL;
+
+      wallet.traderStrategyPL =
+        first.traderStrategyPL;
+
+      wallet.userStrategy =
+        first.userStrategy;
+
+      wallet.traderStrategy =
+        first.traderStrategy;
+
+      wallet.costPrice =
+        first.entryPrice;
+
+      wallet.soldPrice =
+        first.exitPrice;
+
+      /* -----------------------------------------------
+         MOVE TO STAGE 3
+      ----------------------------------------------- */
+
+      wallet.stage =
+        3;
 
       wallet.status =
         STATUSES.PENDING_STAGE3;
@@ -1605,6 +1599,17 @@ async function stage2Decision(
       wallet.stage2ReviewedAt =
         at;
 
+      wallet.stage2Decision =
+        "approve";
+
+      wallet.stage2Comments =
+        cleanNote;
+
+      wallet.stage2Completed =
+        true;
+
+      wallet.stage2CompletedAt =
+        at;
 
       wallet.history.push({
         type:
@@ -1619,64 +1624,11 @@ async function stage2Decision(
         at,
 
         detail:
-          `Stage 2 approved by ${req.user.name} (${req.user.role}). Wallet moved to Stage 3.${
-            note.trim()
-              ? ` Note: ${note.trim()}`
-              : ""
-          }`,
+          `All ${wallet.stage2Items.length} Stage 2 coin(s) approved. Wallet moved to Stage 3.`,
       });
     }
-
-
-    /*
-     * =======================================================
-     * REJECT
-     * =======================================================
-     */
-
-    if (
-      decision === "reject"
-    ) {
-      wallet.status =
-        STATUSES.FAILED;
-
-      wallet.stage2ReviewedBy =
-        req.user._id;
-
-      wallet.stage2ReviewedAt =
-        at;
-
-      wallet.failedBy =
-        req.user._id;
-
-      wallet.failedAt =
-        at;
-
-
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE2_REJECTED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
-        at,
-
-        detail:
-          `Stage 2 rejected by ${req.user.name} (${req.user.role}).${
-            note.trim()
-              ? ` Reason: ${note.trim()}`
-              : ""
-          }`,
-      });
-    }
-
 
     await wallet.save();
-
 
     const populated =
       await populate(
@@ -1685,9 +1637,16 @@ async function stage2Decision(
         )
       );
 
-
-    res.json({
+    return res.json({
       success: true,
+
+      message:
+        allApproved
+          ? "All Stage 2 coins are approved. Wallet moved to Stage 3."
+          : `Stage 2 coin ${item.coinName} approved.`,
+
+      submission:
+        item,
 
       wallet:
         walletResponse(
@@ -1699,9 +1658,8 @@ async function stage2Decision(
   }
 }
 
-
 /* =========================================================
-   STAGE 3 FINAL ADMIN DECISION
+   STAGE 3 DECISION
 ========================================================= */
 
 async function stage3Decision(
@@ -1710,14 +1668,9 @@ async function stage3Decision(
   next
 ) {
   try {
-    /*
-     * =======================================================
-     * ADMIN ONLY
-     * =======================================================
-     */
-
     if (
-      req.user.role !== "admin"
+      req.user.role !==
+      "admin"
     ) {
       return res.status(403).json({
         success: false,
@@ -1726,12 +1679,10 @@ async function stage3Decision(
       });
     }
 
-
     const {
       decision,
       note = "",
     } = req.body;
-
 
     if (
       ![
@@ -1748,12 +1699,10 @@ async function stage3Decision(
       });
     }
 
-
     const wallet =
       await Wallet.findById(
         req.params.id
       );
-
 
     if (!wallet) {
       return res.status(404).json({
@@ -1762,7 +1711,6 @@ async function stage3Decision(
           "Wallet not found",
       });
     }
-
 
     if (
       wallet.stage !== 3 ||
@@ -1776,10 +1724,8 @@ async function stage3Decision(
       });
     }
 
-
     const at =
       new Date();
-
 
     wallet.stage3ReviewedBy =
       req.user._id;
@@ -1787,21 +1733,20 @@ async function stage3Decision(
     wallet.stage3ReviewedAt =
       at;
 
+    wallet.stage3Decision =
+      decision;
 
-    /*
-     * =======================================================
-     * FINAL APPROVE
-     * =======================================================
-     */
+    wallet.stage3Comments =
+      note.trim();
 
     if (
       decision === "approve"
     ) {
-      wallet.stage = 3;
+      wallet.stage =
+        3;
 
       wallet.status =
         STATUSES.SUCCESSFUL;
-
 
       wallet.history.push({
         type:
@@ -1824,13 +1769,6 @@ async function stage3Decision(
       });
     }
 
-
-    /*
-     * =======================================================
-     * FINAL REJECT
-     * =======================================================
-     */
-
     if (
       decision === "reject"
     ) {
@@ -1843,6 +1781,8 @@ async function stage3Decision(
       wallet.failedAt =
         at;
 
+      wallet.failureReason =
+        note.trim();
 
       wallet.history.push({
         type:
@@ -1865,9 +1805,7 @@ async function stage3Decision(
       });
     }
 
-
     await wallet.save();
-
 
     const populated =
       await populate(
@@ -1875,7 +1813,6 @@ async function stage3Decision(
           wallet._id
         )
       );
-
 
     res.json({
       success: true,
@@ -1889,7 +1826,6 @@ async function stage3Decision(
     next(error);
   }
 }
-
 
 /* =========================================================
    ADD NOTE
@@ -1905,7 +1841,6 @@ async function addNote(
       note = "",
     } = req.body;
 
-
     if (
       !note.trim()
     ) {
@@ -1916,12 +1851,10 @@ async function addNote(
       });
     }
 
-
     const wallet =
       await Wallet.findById(
         req.params.id
       );
-
 
     if (!wallet) {
       return res.status(404).json({
@@ -1931,23 +1864,16 @@ async function addNote(
       });
     }
 
-
-    /*
-     * User can add notes only
-     * to their own wallet.
-     *
-     * Managers/Admin can add notes
-     * to any wallet.
-     */
-
     const allowed =
-      req.user.role === "admin" ||
-      req.user.role === "manager1" ||
-      req.user.role === "manager2" ||
+      req.user.role ===
+        "admin" ||
+      req.user.role ===
+        "manager1" ||
+      req.user.role ===
+        "manager2" ||
       wallet.userId
         .toString() ===
         req.user._id.toString();
-
 
     if (!allowed) {
       return res.status(403).json({
@@ -1956,7 +1882,6 @@ async function addNote(
           "You cannot add notes to this wallet",
       });
     }
-
 
     wallet.history.push({
       type:
@@ -1975,9 +1900,7 @@ async function addNote(
         note.trim(),
     });
 
-
     await wallet.save();
-
 
     const populated =
       await populate(
@@ -1985,7 +1908,6 @@ async function addNote(
           wallet._id
         )
       );
-
 
     res.json({
       success: true,
@@ -2000,7 +1922,6 @@ async function addNote(
   }
 }
 
-
 /* =========================================================
    EXPORTS
 ========================================================= */
@@ -2009,9 +1930,14 @@ module.exports = {
   listWallets,
   getWallet,
   createWallet,
+
   stage1Decision,
+
   submitStage2,
+  completeStage2,
   stage2Decision,
+
   stage3Decision,
+
   addNote,
 };

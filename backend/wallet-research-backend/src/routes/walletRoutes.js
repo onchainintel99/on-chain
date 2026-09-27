@@ -16,9 +16,7 @@ const {
   addNote,
 } = require("../controllers/walletController");
 
-
 router.use(protect);
-
 
 /*
  * =========================================================
@@ -42,9 +40,7 @@ router.get(
 
 router.post(
   "/",
-  requireRole(
-    "user"
-  ),
+  requireRole("user"),
   createWallet
 );
 
@@ -65,7 +61,6 @@ router.get(
  * =========================================================
  * STAGE 1 APPROVAL
  *
- * Manager 1
  * Manager 2
  * Admin
  * =========================================================
@@ -84,10 +79,29 @@ router.post(
 
 /*
  * =========================================================
- * STAGE 2 DETAILS
+ * STAGE 2 COIN SUBMISSION
  *
- * ONLY the wallet-owning normal user
- * can submit CP / SP details.
+ * USER ONLY
+ *
+ * IMPORTANT:
+ *
+ * One coin is submitted per request.
+ *
+ * Example:
+ *
+ * Request 1:
+ * BTC
+ *
+ * Request 2:
+ * ETH
+ *
+ * Request 3:
+ * SOL
+ *
+ * All coins are stored inside:
+ *
+ * wallet.stage2Items
+ *
  * =========================================================
  */
 
@@ -102,7 +116,6 @@ router.post(
  * =========================================================
  * STAGE 2 APPROVAL
  *
- * Manager 1
  * Manager 2
  * Admin
  * =========================================================
