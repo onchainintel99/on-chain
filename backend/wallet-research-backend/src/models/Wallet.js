@@ -1,1941 +1,347 @@
 const mongoose = require("mongoose");
 
-const Wallet = require("../models/Wallet");
-
-const {
-  STATUSES,
-  HISTORY_TYPES,
-} = require("../constants");
-
-/* =========================================================
-   POPULATE
-========================================================= */
-
-const populate = (query) =>
-  query
-    .populate(
-      "userId",
-      "name email role"
-    )
-    .populate(
-      "stage1ReviewedBy",
-      "name email role"
-    )
-    .populate(
-      "stage2ReviewedBy",
-      "name email role"
-    )
-    .populate(
-      "stage3ReviewedBy",
-      "name email role"
-    )
-    .populate(
-      "failedBy",
-      "name email role"
-    )
-    .populate(
-      "history.byUser",
-      "name email role"
-    );
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function objectIdToString(value) {
-  if (!value) return "";
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (value._id) {
-    return value._id.toString();
-  }
-
-  if (value.id) {
-    return value.id.toString();
-  }
-
-  return value.toString();
-}
-
-function getUserName(value) {
-  if (!value) return "";
-
-  if (typeof value === "object") {
-    return value.name || value.email || "";
-  }
-
-  return "";
-}
-
-/* =========================================================
-   RESPONSE FORMAT
-========================================================= */
-
-function walletResponse(wallet) {
-  if (!wallet) return null;
-
-  const data = wallet.toObject
-    ? wallet.toObject()
-    : wallet;
-
-  const creatorId =
-    objectIdToString(data.userId);
-
-  const creatorName =
-    getUserName(data.userId);
-
-  const creatorEmail =
-    data.userId?.email || "";
-
-  const creatorRole =
-    data.userId?.role || "";
-
-  const stage1ReviewerId =
-    objectIdToString(
-      data.stage1ReviewedBy
-    );
-
-  const stage1ReviewerName =
-    getUserName(
-      data.stage1ReviewedBy
-    );
-
-  const stage1ReviewerEmail =
-    data.stage1ReviewedBy?.email || "";
-
-  const stage1ReviewerRole =
-    data.stage1ReviewedBy?.role || "";
-
-  const stage2ReviewerId =
-    objectIdToString(
-      data.stage2ReviewedBy
-    );
-
-  const stage2ReviewerName =
-    getUserName(
-      data.stage2ReviewedBy
-    );
-
-  const stage2ReviewerEmail =
-    data.stage2ReviewedBy?.email || "";
-
-  const stage2ReviewerRole =
-    data.stage2ReviewedBy?.role || "";
-
-  const stage3ReviewerId =
-    objectIdToString(
-      data.stage3ReviewedBy
-    );
-
-  const stage3ReviewerName =
-    getUserName(
-      data.stage3ReviewedBy
-    );
-
-  const stage3ReviewerEmail =
-    data.stage3ReviewedBy?.email || "";
-
-  const stage3ReviewerRole =
-    data.stage3ReviewedBy?.role || "";
-
-  const failedById =
-    objectIdToString(data.failedBy);
-
-  const failedByName =
-    getUserName(data.failedBy);
-
-  const failedByEmail =
-    data.failedBy?.email || "";
-
-  const failedByRole =
-    data.failedBy?.role || "";
-
-  /*
-   * New multiple Stage 2 items.
-   *
-   * Legacy wallets are converted
-   * into one item for display.
-   */
-
-  const stage2Items =
-    Array.isArray(data.stage2Items) &&
-    data.stage2Items.length
-      ? data.stage2Items
-      : data.coinName &&
-        data.entryPrice != null &&
-        data.peakPrice != null &&
-        data.exitPrice != null
-      ? [
-          {
-            coinName: data.coinName,
-
-            entryPrice:
-              data.entryPrice,
-
-            peakPrice:
-              data.peakPrice,
-
-            exitPrice:
-              data.exitPrice,
-
-            userStrategyPL:
-              data.userStrategyPL ??
-              data.userStrategy ??
-              null,
-
-            traderStrategyPL:
-              data.traderStrategyPL ??
-              data.traderStrategy ??
-              null,
-
-            userStrategy:
-              data.userStrategy ??
-              data.userStrategyPL ??
-              null,
-
-            traderStrategy:
-              data.traderStrategy ??
-              data.traderStrategyPL ??
-              null,
-          },
-        ]
-      : [];
-
-  return {
-    ...data,
-
-    id:
-      data._id?.toString?.() ||
-      data.id,
-
-    stage2Items,
-
-    stage2Completed:
-      data.stage2Completed === true,
-
-    stage2CompletedAt:
-      data.stage2CompletedAt || null,
-
-    userId:
-      data.userId || null,
-
-    userIdString:
-      creatorId,
-
-    userName:
-      creatorName,
-
-    userEmail:
-      creatorEmail,
-
-    userRole:
-      creatorRole,
-
-    stage1ReviewedBy:
-      data.stage1ReviewedBy || null,
-
-    stage1ReviewedById:
-      stage1ReviewerId,
-
-    stage1ReviewedByName:
-      stage1ReviewerName,
-
-    stage1ReviewedByEmail:
-      stage1ReviewerEmail,
-
-    stage1ReviewedByRole:
-      stage1ReviewerRole,
-
-    stage2ReviewedBy:
-      data.stage2ReviewedBy || null,
-
-    stage2ReviewedById:
-      stage2ReviewerId,
-
-    stage2ReviewedByName:
-      stage2ReviewerName,
-
-    stage2ReviewedByEmail:
-      stage2ReviewerEmail,
-
-    stage2ReviewedByRole:
-      stage2ReviewerRole,
-
-    stage3ReviewedBy:
-      data.stage3ReviewedBy || null,
-
-    stage3ReviewedById:
-      stage3ReviewerId,
-
-    stage3ReviewedByName:
-      stage3ReviewerName,
-
-    stage3ReviewedByEmail:
-      stage3ReviewerEmail,
-
-    stage3ReviewedByRole:
-      stage3ReviewerRole,
-
-    failedBy:
-      data.failedBy || null,
-
-    failedById,
-
-    failedByName,
-
-    failedByEmail,
-
-    failedByRole,
-  };
-}
-
-/* =========================================================
-   STAGE 2 VISIBILITY
-========================================================= */
-
-function isStage2Wallet(wallet) {
-  return (
-    wallet?.stage === 2 &&
-    wallet?.status ===
-      STATUSES.PENDING_STAGE2
-  );
-}
-
-/* =========================================================
-   LIST WALLETS
-========================================================= */
-
-async function listWallets(
-  req,
-  res,
-  next
-) {
-  try {
-    const {
-      search = "",
-      status = "All",
-      stage = "All",
-      mine,
-      page = 1,
-      limit = 100,
-    } = req.query;
-
-    const filter = {};
-
-    if (
-      status &&
-      status !== "All"
-    ) {
-      filter.status = status;
-    }
-
-    if (
-      stage &&
-      stage !== "All"
-    ) {
-      const stageNumber =
-        Number(stage);
-
-      if (
-        [1, 2, 3].includes(
-          stageNumber
-        )
-      ) {
-        filter.stage =
-          stageNumber;
-      }
-    }
-
-    const isStage2Request =
-      stage === "2" ||
-      status ===
-        STATUSES.PENDING_STAGE2;
-
-    if (
-      req.user.role === "user" &&
-      !isStage2Request
-    ) {
-      filter.userId =
-        req.user._id;
-    }
-
-    if (
-      mine === "true"
-    ) {
-      filter.userId =
-        req.user._id;
-    }
-
-    if (
-      search.trim()
-    ) {
-      const q =
-        search.trim();
-
-      filter.$or = [
-        {
-          coinName: {
-            $regex: q,
-            $options: "i",
-          },
-        },
-        {
-          "stage2Items.coinName": {
-            $regex: q,
-            $options: "i",
-          },
-        },
-        {
-          tradeId: {
-            $regex: q,
-            $options: "i",
-          },
-        },
-      ];
-    }
-
-    const safeLimit =
-      Math.min(
-        Math.max(
-          Number(limit) || 100,
-          1
-        ),
-        200
-      );
-
-    const safePage =
-      Math.max(
-        Number(page) || 1,
-        1
-      );
-
-    const [
-      wallets,
-      total,
-    ] = await Promise.all([
-      populate(
-        Wallet.find(filter)
-          .sort({
-            updatedAt: -1,
-          })
-          .skip(
-            (safePage - 1) *
-              safeLimit
-          )
-          .limit(safeLimit)
-      ),
-
-      Wallet.countDocuments(
-        filter
-      ),
-    ]);
-
-    res.json({
-      success: true,
-
-      wallets:
-        wallets.map(
-          walletResponse
-        ),
-
-      pagination: {
-        page:
-          safePage,
-
-        limit:
-          safeLimit,
-
-        total,
-
-        pages:
-          Math.ceil(
-            total /
-              safeLimit
-          ),
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* =========================================================
-   GET WALLET
-========================================================= */
-
-async function getWallet(
-  req,
-  res,
-  next
-) {
-  try {
-    if (
-      !mongoose.isValidObjectId(
-        req.params.id
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid wallet id",
-      });
-    }
-
-    const wallet =
-      await populate(
-        Wallet.findById(
-          req.params.id
-        )
-      );
-
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Wallet not found",
-      });
-    }
-
-    if (
-      req.user.role === "user"
-    ) {
-      const ownerId =
-        wallet.userId?._id?.toString?.() ||
-        wallet.userId?.toString?.();
-
-      const ownWallet =
-        ownerId ===
-        req.user._id.toString();
-
-      const sharedStage2 =
-        isStage2Wallet(wallet);
-
-      if (
-        !ownWallet &&
-        !sharedStage2
-      ) {
-        return res.status(403).json({
-          success: false,
-          message:
-            "You cannot view this wallet",
-        });
-      }
-    }
-
-    res.json({
-      success: true,
-
-      wallet:
-        walletResponse(
-          wallet
-        ),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* =========================================================
-   CREATE WALLET
-========================================================= */
-
-async function createWallet(
-  req,
-  res,
-  next
-) {
-  try {
-    if (
-      req.user.role !== "user"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only normal users can create wallets",
-      });
-    }
-
-    const {
-      tradeId,
-      notes = "",
-    } = req.body;
-
-    if (
-      !tradeId ||
-      !tradeId.trim()
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Trade ID is required",
-      });
-    }
-
-    const cleanTradeId =
-      tradeId.trim();
-
-    const normalized =
-      cleanTradeId.toLowerCase();
-
-    const existing =
-      await Wallet.findOne({
-        tradeIdNormalized:
-          normalized,
-      });
-
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        message:
-          "This Trader ID is already used. Please enter a different Trader ID.",
-      });
-    }
-
-    const at =
-      new Date();
-
-    const wallet =
-      await Wallet.create({
-        tradeId:
-          cleanTradeId,
-
-        tradeIdNormalized:
-          normalized,
-
-        notes:
-          notes?.trim?.() ||
-          "",
-
-        userId:
-          req.user._id,
-
-        stage: 1,
-
-        status:
-          STATUSES.PENDING_STAGE1,
-
-        history: [
-          {
-            type:
-              HISTORY_TYPES.CREATED,
-
-            byUser:
-              req.user._id,
-
-            by:
-              req.user.name,
-
-            at,
-
-            detail:
-              `Wallet created by ${req.user.name} and sent to Stage 1.`,
-          },
-        ],
-      });
-
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
-
-    res.status(201).json({
-      success: true,
-
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    if (
-      error?.code === 11000 &&
-      error?.keyPattern
-        ?.tradeIdNormalized
-    ) {
-      return res.status(409).json({
-        success: false,
-        message:
-          "This Trader ID is already used. Please enter a different Trader ID.",
-      });
-    }
-
-    next(error);
-  }
-}
-
-/* =========================================================
-   STAGE 1 DECISION
-========================================================= */
-
-async function stage1Decision(
-  req,
-  res,
-  next
-) {
-  try {
-    const {
-      decision,
-      note = "",
-    } = req.body;
-
-    if (
-      ![
-        "manager1",
-        "manager2",
-        "admin",
-      ].includes(
-        req.user.role
-      )
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only Manager 1, Manager 2 and Admin can approve or reject Stage 1",
-      });
-    }
-
-    if (
-      ![
-        "approve",
-        "reject",
-      ].includes(
-        decision
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Decision must be approve or reject",
-      });
-    }
-
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
-
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Wallet not found",
-      });
-    }
-
-    if (
-      wallet.stage !== 1 ||
-      wallet.status !==
-        STATUSES.PENDING_STAGE1
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "This wallet is not waiting for Stage 1 approval",
-      });
-    }
-
-    const at =
-      new Date();
-
-    if (
-      decision === "approve"
-    ) {
-      wallet.stage = 2;
-
-      wallet.status =
-        STATUSES.PENDING_STAGE2;
-
-      wallet.stage2Completed =
-        false;
-
-      wallet.stage2CompletedAt =
-        null;
-
-      wallet.stage1ReviewedBy =
-        req.user._id;
-
-      wallet.stage1ReviewedAt =
-        at;
-
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE1_APPROVED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
-        at,
-
-        detail:
-          `Stage 1 approved by ${req.user.name} (${req.user.role}).${
-            note.trim()
-              ? ` Note: ${note.trim()}`
-              : ""
-          }`,
-      });
-    }
-
-    if (
-      decision === "reject"
-    ) {
-      wallet.status =
-        STATUSES.FAILED;
-
-      wallet.stage1ReviewedBy =
-        req.user._id;
-
-      wallet.stage1ReviewedAt =
-        at;
-
-      wallet.failedBy =
-        req.user._id;
-
-      wallet.failedAt =
-        at;
-
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE1_REJECTED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
-        at,
-
-        detail:
-          `Stage 1 rejected by ${req.user.name} (${req.user.role}).${
-            note.trim()
-              ? ` Reason: ${note.trim()}`
-              : ""
-          }`,
-      });
-    }
-
-    await wallet.save();
-
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
-
-    res.json({
-      success: true,
-
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* =========================================================
-   SUBMIT ONE STAGE 2 COIN
-========================================================= */
-
-async function submitStage2(
-  req,
-  res,
-  next
-) {
-  try {
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
-
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message: "Wallet not found",
-      });
-    }
-
+const stage2ItemSchema = new mongoose.Schema(
+  {
     // =================================================
-    // ONLY OWNER CAN SUBMIT
+    // COIN DETAILS
     // =================================================
 
-    const ownerId =
-      wallet.userId?.toString?.();
+    coinName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    if (
-      req.user.role !== "user" ||
-      ownerId !==
-        req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only the wallet owner can submit Stage 2 details",
-      });
-    }
+    entryPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-    // =================================================
-    // MUST BE STAGE 2
-    // =================================================
+    peakPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-    if (
-      wallet.stage !== 2 ||
-      wallet.status !==
-        STATUSES.PENDING_STAGE2
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "This wallet is not open for Stage 2 details",
-      });
-    }
+    exitPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
     // =================================================
-    // ONE COIN PER REQUEST
+    // STRATEGIES
     // =================================================
 
-    const cleanCoinName =
-      String(
-        req.body.coinName || ""
-      ).trim();
+    userStrategyPL: {
+      type: Number,
+      default: 0,
+    },
 
-    const entry =
-      Number(
-        req.body.entryPrice
-      );
+    traderStrategyPL: {
+      type: Number,
+      default: 0,
+    },
 
-    const peak =
-      Number(
-        req.body.peakPrice
-      );
+    userStrategy: {
+      type: Number,
+      default: 0,
+    },
 
-    const exit =
-      Number(
-        req.body.exitPrice
-      );
-
-    // =================================================
-    // VALIDATION
-    // =================================================
-
-    if (!cleanCoinName) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Coin name is required",
-      });
-    }
-
-    if (
-      !Number.isFinite(entry) ||
-      entry <= 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Entry price must be greater than 0",
-      });
-    }
-
-    if (
-      !Number.isFinite(peak) ||
-      peak < 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Peak price is invalid",
-      });
-    }
-
-    if (
-      !Number.isFinite(exit) ||
-      exit < 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Exit price is invalid",
-      });
-    }
+    traderStrategy: {
+      type: Number,
+      default: 0,
+    },
 
     // =================================================
-    // STRATEGY CALCULATIONS
+    // INDIVIDUAL SUBMISSION STATUS
     // =================================================
 
-    const userStrategy =
-      Number(
-        (
-          ((peak - entry) /
-            entry) *
-          100
-        ).toFixed(2)
-      );
-
-    const traderStrategy =
-      Number(
-        (
-          ((exit - entry) /
-            entry) *
-          100
-        ).toFixed(2)
-      );
-
-    // =================================================
-    // CREATE INDIVIDUAL SUBMISSION
-    // =================================================
-
-    const submission = {
-      coinName:
-        cleanCoinName,
-
-      entryPrice:
-        entry,
-
-      peakPrice:
-        peak,
-
-      exitPrice:
-        exit,
-
-      userStrategyPL:
-        userStrategy,
-
-      traderStrategyPL:
-        traderStrategy,
-
-      userStrategy:
-        userStrategy,
-
-      traderStrategy:
-        traderStrategy,
-
-      status:
+    status: {
+      type: String,
+      enum: [
         "Pending",
-
-      decision:
-        null,
-
-      reviewedBy:
-        null,
-
-      reviewedByName:
-        "",
-
-      reviewedByEmail:
-        "",
-
-      reviewedAt:
-        null,
-
-      reviewNote:
-        "",
-
-      submittedAt:
-        new Date(),
-    };
+        "Approved",
+        "Rejected",
+      ],
+      default: "Pending",
+    },
 
     // =================================================
-    // APPEND — DO NOT REPLACE
+    // MANAGER REVIEW
     // =================================================
 
-    if (
-      !Array.isArray(
-        wallet.stage2Items
-      )
-    ) {
-      wallet.stage2Items = [];
-    }
-
-    wallet.stage2Items.push(
-      submission
-    );
-
-    // =================================================
-    // KEEP LATEST VALUES FOR OLD UI
-    // =================================================
-
-    wallet.coinName =
-      cleanCoinName;
-
-    wallet.entryPrice =
-      entry;
-
-    wallet.peakPrice =
-      peak;
-
-    wallet.exitPrice =
-      exit;
-
-    wallet.userStrategyPL =
-      userStrategy;
-
-    wallet.traderStrategyPL =
-      traderStrategy;
-
-    wallet.userStrategy =
-      userStrategy;
-
-    wallet.traderStrategy =
-      traderStrategy;
-
-    // =================================================
-    // HISTORY
-    // =================================================
-
-    wallet.history.push({
-      type:
-        HISTORY_TYPES.STAGE2_SUBMITTED,
-
-      byUser:
-        req.user._id,
-
-      by:
-        req.user.name,
-
-      at:
-        new Date(),
-
-      detail:
-        `Stage 2 coin ${cleanCoinName} submitted by ${req.user.name}.`,
-    });
-
-    // =================================================
-    // SAVE
-    // =================================================
-
-    await wallet.save();
-
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
-
-    return res.json({
-      success: true,
-
-      message:
-        "Stage 2 coin submitted successfully",
-
-      submission:
-        wallet.stage2Items[
-          wallet.stage2Items.length - 1
-        ],
-
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* =========================================================
-   COMPLETE STAGE 2
-========================================================= */
-
-async function completeStage2(
-  req,
-  res,
-  next
-) {
-  try {
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
-
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Wallet not found",
-      });
-    }
-
-    /* -----------------------------------------------------
-       OWNER CHECK
-    ----------------------------------------------------- */
-
-    const ownerId =
-      wallet.userId?.toString?.();
-
-    if (
-      req.user.role !== "user" ||
-      ownerId !==
-        req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only the user who created this wallet can finish Stage 2",
-      });
-    }
-
-    /* -----------------------------------------------------
-       STAGE CHECK
-    ----------------------------------------------------- */
-
-    if (
-      wallet.stage !== 2 ||
-      wallet.status !==
-        STATUSES.PENDING_STAGE2
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "This wallet is not currently in Stage 2",
-      });
-    }
-
-    /* -----------------------------------------------------
-       ALREADY COMPLETED
-    ----------------------------------------------------- */
-
-    if (
-      wallet.stage2Completed === true
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Stage 2 has already been completed",
-      });
-    }
-
-    /* -----------------------------------------------------
-       REQUIRE AT LEAST ONE COIN
-    ----------------------------------------------------- */
-
-    if (
-      !Array.isArray(
-        wallet.stage2Items
-      ) ||
-      wallet.stage2Items.length === 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Please add at least one coin before finishing Stage 2",
-      });
-    }
-
-    /* -----------------------------------------------------
-       COMPLETE
-    ----------------------------------------------------- */
-
-    wallet.stage2Completed =
-      true;
-
-    wallet.stage2CompletedAt =
-      new Date();
-
-    wallet.history.push({
-      type:
-        HISTORY_TYPES.STAGE2_SUBMITTED,
-
-      byUser:
-        req.user._id,
-
-      by:
-        req.user.name,
-
-      at:
-        new Date(),
-
-      detail:
-        `Stage 2 completed by ${req.user.name} with ${wallet.stage2Items.length} coin(s).`,
-    });
-
-    await wallet.save();
-
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
-
-    return res.json({
-      success: true,
-
-      message:
-        "Stage 2 completed successfully. Waiting for Manager approval.",
-
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* =========================================================
-   STAGE 2 DECISION
-========================================================= */
-
-async function stage2Decision(
-  req,
-  res,
-  next
-) {
-  try {
-    const {
-      decision,
-      note = "",
-      submissionId,
-    } = req.body;
-
-    /* -----------------------------------------------------
-       ROLE
-    ----------------------------------------------------- */
-
-    if (
-      ![
-        "manager2",
-        "admin",
-      ].includes(
-        req.user.role
-      )
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only Manager 2 or Admin can review individual Stage 2 coins",
-      });
-    }
-
-    /* -----------------------------------------------------
-       DECISION
-    ----------------------------------------------------- */
-
-    if (
-      ![
+    decision: {
+      type: String,
+      enum: [
         "approve",
         "reject",
-      ].includes(
-        decision
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Decision must be approve or reject",
-      });
-    }
-
-    /* -----------------------------------------------------
-       SUBMISSION ID
-    ----------------------------------------------------- */
-
-    if (!submissionId) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Stage 2 submissionId is required",
-      });
-    }
-
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
-
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Wallet not found",
-      });
-    }
-
-    /* -----------------------------------------------------
-       STAGE CHECK
-    ----------------------------------------------------- */
-
-    if (
-      wallet.stage !== 2 ||
-      wallet.status !==
-        STATUSES.PENDING_STAGE2
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "This wallet is not waiting for Stage 2 review",
-      });
-    }
-
-    /* -----------------------------------------------------
-       ITEMS CHECK
-    ----------------------------------------------------- */
-
-    if (
-      !Array.isArray(
-        wallet.stage2Items
-      ) ||
-      wallet.stage2Items.length === 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Stage 2 has no coin submissions",
-      });
-    }
-
-    /* -----------------------------------------------------
-       FIND INDIVIDUAL COIN
-    ----------------------------------------------------- */
-
-    const item =
-      wallet.stage2Items.id(
-        submissionId
-      );
-
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Stage 2 coin submission not found",
-      });
-    }
-
-    /* -----------------------------------------------------
-       PREVENT DOUBLE REVIEW
-    ----------------------------------------------------- */
-
-    if (
-      item.status !==
-      "Pending"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          `This coin has already been ${String(item.status).toLowerCase()}`,
-      });
-    }
-
-    const at =
-      new Date();
-
-    const cleanNote =
-      String(
-        note || ""
-      ).trim();
-
-    /* -----------------------------------------------------
-       UPDATE ONLY THIS COIN
-    ----------------------------------------------------- */
-
-    item.status =
-      decision === "approve"
-        ? "Approved"
-        : "Rejected";
-
-    item.decision =
-      decision;
-
-    item.reviewedBy =
-      req.user._id;
-
-    item.reviewedByName =
-      req.user.name ||
-      req.user.email ||
-      "";
-
-    item.reviewedByEmail =
-      req.user.email ||
-      "";
-
-    item.reviewedAt =
-      at;
-
-    item.reviewNote =
-      cleanNote;
-
-    /* -----------------------------------------------------
-       HISTORY
-    ----------------------------------------------------- */
-
-    wallet.history.push({
-      type:
-        decision === "approve"
-          ? HISTORY_TYPES.STAGE2_APPROVED
-          : HISTORY_TYPES.STAGE2_REJECTED,
-
-      byUser:
-        req.user._id,
-
-      by:
-        req.user.name,
-
-      at,
-
-      detail:
-        `Stage 2 coin ${item.coinName} ${decision === "approve" ? "approved" : "rejected"} by ${req.user.name} (${req.user.role}).${
-          cleanNote
-            ? ` ${cleanNote}`
-            : ""
-        }`,
-    });
-
-    /* -----------------------------------------------------
-       IF THIS COIN IS REJECTED:
-       KEEP THE WALLET IN STAGE 2.
-
-       Other coins are NOT affected.
-    ----------------------------------------------------- */
-
-    if (
-      decision === "reject"
-    ) {
-      await wallet.save();
-
-      const populated =
-        await populate(
-          Wallet.findById(
-            wallet._id
-          )
-        );
-
-      return res.json({
-        success: true,
-
-        message:
-          `Stage 2 coin ${item.coinName} rejected. Other coins remain unchanged.`,
-
-        submission:
-          item,
-
-        wallet:
-          walletResponse(
-            populated
-          ),
-      });
-    }
-
-    /* -----------------------------------------------------
-       CHECK WHETHER EVERY SUBMITTED COIN IS APPROVED
-    ----------------------------------------------------- */
-
-    const allApproved =
-      wallet.stage2Items.length > 0 &&
-      wallet.stage2Items.every(
-        (stage2Item) =>
-          stage2Item.status ===
-          "Approved"
-      );
-
-    if (
-      allApproved
-    ) {
-      const first =
-        wallet.stage2Items[0];
-
-      /* -----------------------------------------------
-         KEEP LEGACY/LATEST VALUES
-      ----------------------------------------------- */
-
-      wallet.coinName =
-        first.coinName;
-
-      wallet.entryPrice =
-        first.entryPrice;
-
-      wallet.peakPrice =
-        first.peakPrice;
-
-      wallet.exitPrice =
-        first.exitPrice;
-
-      wallet.userStrategyPL =
-        first.userStrategyPL;
-
-      wallet.traderStrategyPL =
-        first.traderStrategyPL;
-
-      wallet.userStrategy =
-        first.userStrategy;
-
-      wallet.traderStrategy =
-        first.traderStrategy;
-
-      wallet.costPrice =
-        first.entryPrice;
-
-      wallet.soldPrice =
-        first.exitPrice;
-
-      /* -----------------------------------------------
-         MOVE TO STAGE 3
-      ----------------------------------------------- */
-
-      wallet.stage =
-        3;
-
-      wallet.status =
-        STATUSES.PENDING_STAGE3;
-
-      wallet.stage2ReviewedBy =
-        req.user._id;
-
-      wallet.stage2ReviewedAt =
-        at;
-
-      wallet.stage2Decision =
-        "approve";
-
-      wallet.stage2Comments =
-        cleanNote;
-
-      wallet.stage2Completed =
-        true;
-
-      wallet.stage2CompletedAt =
-        at;
-
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE2_APPROVED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
-        at,
-
-        detail:
-          `All ${wallet.stage2Items.length} Stage 2 coin(s) approved. Wallet moved to Stage 3.`,
-      });
-    }
-
-    await wallet.save();
-
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
-
-    return res.json({
-      success: true,
-
-      message:
-        allApproved
-          ? "All Stage 2 coins are approved. Wallet moved to Stage 3."
-          : `Stage 2 coin ${item.coinName} approved.`,
-
-      submission:
-        item,
-
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    next(error);
+        null,
+      ],
+      default: null,
+    },
+
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    reviewedByName: {
+      type: String,
+      default: "",
+    },
+
+    reviewedByEmail: {
+      type: String,
+      default: "",
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+
+    reviewNote: {
+      type: String,
+      default: "",
+    },
+
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    _id: true,
   }
-}
+);
 
-/* =========================================================
-   STAGE 3 DECISION
-========================================================= */
+// =====================================================
+// KEEP YOUR EXISTING WALLET SCHEMA FIELDS
+// =====================================================
 
-async function stage3Decision(
-  req,
-  res,
-  next
-) {
-  try {
-    if (
-      req.user.role !==
-      "admin"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only Admin can perform final Stage 3 approval",
-      });
-    }
+const walletSchema = new mongoose.Schema(
+  {
+    // Coin name is entered during Stage 2. Stage 1 only needs Trade ID.
+    coinName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-    const {
-      decision,
-      note = "",
-    } = req.body;
+    tradeId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    if (
-      ![
-        "approve",
-        "reject",
-      ].includes(
-        decision
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Decision must be approve or reject",
-      });
-    }
+    tradeIdNormalized: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
 
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Wallet not found",
-      });
-    }
+    // =================================================
+    // WORKFLOW
+    // =================================================
 
-    if (
-      wallet.stage !== 3 ||
-      wallet.status !==
-        STATUSES.PENDING_STAGE3
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "This wallet is not waiting for final Stage 3 approval",
-      });
-    }
+    stage: {
+      type: Number,
+      default: 1,
+    },
 
-    const at =
-      new Date();
+    status: {
+      type: String,
+      required: true,
+    },
 
-    wallet.stage3ReviewedBy =
-      req.user._id;
+    // =================================================
+    // STAGE 2
+    // =================================================
 
-    wallet.stage3ReviewedAt =
-      at;
+    stage2Items: {
+      type: [stage2ItemSchema],
+      default: [],
+    },
 
-    wallet.stage3Decision =
-      decision;
+    // =================================================
+    // LEGACY/LATEST VALUES
+    // Keep these if your existing app uses them.
+    // =================================================
 
-    wallet.stage3Comments =
-      note.trim();
+    entryPrice: {
+      type: Number,
+      default: null,
+    },
 
-    if (
-      decision === "approve"
-    ) {
-      wallet.stage =
-        3;
+    peakPrice: {
+      type: Number,
+      default: null,
+    },
 
-      wallet.status =
-        STATUSES.SUCCESSFUL;
+    exitPrice: {
+      type: Number,
+      default: null,
+    },
 
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE3_APPROVED,
+    userStrategyPL: {
+      type: Number,
+      default: 0,
+    },
 
-        byUser:
-          req.user._id,
+    traderStrategyPL: {
+      type: Number,
+      default: 0,
+    },
 
-        by:
-          req.user.name,
+    userStrategy: {
+      type: Number,
+      default: 0,
+    },
 
-        at,
+    traderStrategy: {
+      type: Number,
+      default: 0,
+    },
 
-        detail:
-          `Final Stage 3 approval completed by Admin ${req.user.name}. Wallet is now Successful.${
-            note.trim()
-              ? ` Note: ${note.trim()}`
-              : ""
-          }`,
-      });
-    }
+    costPrice: {
+      type: Number,
+      default: null,
+    },
 
-    if (
-      decision === "reject"
-    ) {
-      wallet.status =
-        STATUSES.FAILED;
+    soldPrice: {
+      type: Number,
+      default: null,
+    },
 
-      wallet.failedBy =
-        req.user._id;
+    // =================================================
+    // STAGE 2 WORKFLOW
+    // =================================================
 
-      wallet.failedAt =
-        at;
+    stage2Completed: {
+      type: Boolean,
+      default: false,
+    },
 
-      wallet.failureReason =
-        note.trim();
+    stage2CompletedAt: {
+      type: Date,
+      default: null,
+    },
 
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE3_REJECTED,
+    stage2ReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
-        byUser:
-          req.user._id,
+    stage2ReviewedAt: {
+      type: Date,
+      default: null,
+    },
 
-        by:
-          req.user.name,
+    stage2Decision: {
+      type: String,
+      enum: ["approve", "reject", null],
+      default: null,
+    },
 
-        at,
+    stage2Comments: {
+      type: String,
+      default: "",
+    },
 
-        detail:
-          `Stage 3 final approval rejected by Admin ${req.user.name}.${
-            note.trim()
-              ? ` Reason: ${note.trim()}`
-              : ""
-          }`,
-      });
-    }
+    // =================================================
+    // STAGE 1 REVIEW
+    // =================================================
 
-    await wallet.save();
+    stage1ReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
 
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
+    stage1ReviewedAt: {
+      type: Date,
+      default: null,
+    },
 
-    res.json({
-      success: true,
+    // =================================================
+    // STAGE 3 REVIEW
+    // =================================================
 
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    next(error);
+    stage3ReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    stage3ReviewedAt: {
+      type: Date,
+      default: null,
+    },
+
+    stage3Decision: {
+      type: String,
+      enum: ["approve", "reject", null],
+      default: null,
+    },
+
+    stage3Comments: {
+      type: String,
+      default: "",
+    },
+
+    // =================================================
+    // EXISTING NOTES / HISTORY
+    // =================================================
+
+    history: {
+      type: Array,
+      default: [],
+    },
+
+    notes: {
+      type: Array,
+      default: [],
+    },
+
+    failedReason: {
+      type: String,
+      default: "",
+    },
+
+    failureReason: {
+      type: String,
+      default: "",
+    },
+
+    failedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    failedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
   }
-}
+);
 
-/* =========================================================
-   ADD NOTE
-========================================================= */
-
-async function addNote(
-  req,
-  res,
-  next
-) {
-  try {
-    const {
-      note = "",
-    } = req.body;
-
-    if (
-      !note.trim()
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Note cannot be empty",
-      });
-    }
-
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
-
-    if (!wallet) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "Wallet not found",
-      });
-    }
-
-    const allowed =
-      req.user.role ===
-        "admin" ||
-      req.user.role ===
-        "manager1" ||
-      req.user.role ===
-        "manager2" ||
-      wallet.userId
-        .toString() ===
-        req.user._id.toString();
-
-    if (!allowed) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "You cannot add notes to this wallet",
-      });
-    }
-
-    wallet.history.push({
-      type:
-        HISTORY_TYPES.NOTE,
-
-      byUser:
-        req.user._id,
-
-      by:
-        req.user.name,
-
-      at:
-        new Date(),
-
-      detail:
-        note.trim(),
-    });
-
-    await wallet.save();
-
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
-
-    res.json({
-      success: true,
-
-      wallet:
-        walletResponse(
-          populated
-        ),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* =========================================================
-   EXPORTS
-========================================================= */
-
-module.exports = {
-  listWallets,
-  getWallet,
-  createWallet,
-
-  stage1Decision,
-
-  submitStage2,
-  completeStage2,
-  stage2Decision,
-
-  stage3Decision,
-
-  addNote,
-};
+module.exports =
+  mongoose.model(
+    "Wallet",
+    walletSchema
+  );
