@@ -349,17 +349,10 @@ async function listWallets(
       }
     }
 
-    const isStage2Request =
-      stage === "2" ||
-      status ===
-        STATUSES.PENDING_STAGE2;
-
-    if (
-      req.user.role === "user" &&
-      !isStage2Request
-    ) {
-      filter.userId =
-        req.user._id;
+    // Users may only list wallets they own, including Stage 2 wallets.
+    // Managers and admins retain visibility across all users' wallets.
+    if (req.user.role === "user") {
+      filter.userId = req.user._id;
     }
 
     if (
@@ -510,13 +503,7 @@ async function getWallet(
         ownerId ===
         req.user._id.toString();
 
-      const sharedStage2 =
-        isStage2Wallet(wallet);
-
-      if (
-        !ownWallet &&
-        !sharedStage2
-      ) {
+      if (!ownWallet) {
         return res.status(403).json({
           success: false,
           message:

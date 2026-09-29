@@ -69,18 +69,8 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
+    // Load once when the dashboard opens; avoid repeated background fetching.
     load();
-
-    const interval =
-      setInterval(
-        load,
-        5000
-      );
-
-    return () =>
-      clearInterval(
-        interval
-      );
   }, []);
 
   const data =

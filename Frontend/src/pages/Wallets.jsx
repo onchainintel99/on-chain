@@ -183,7 +183,9 @@ export default function Wallets() {
   async function load() {
     try {
       setError("");
-      setLoading(true);
+      // Keep the existing table visible during refreshes; only show the
+      // full-page loading state before the first successful load.
+      if (wallets.length === 0) setLoading(true);
 
       const params = new URLSearchParams();
 
@@ -209,10 +211,13 @@ export default function Wallets() {
   }
 
   useEffect(() => {
-    load();
+    // Fetch on initial load and when filters change. No background polling,
+    // so the page does not repeatedly show "Loading wallets" every few seconds.
+    const timeout = setTimeout(() => {
+      load();
+    }, search.trim() ? 300 : 0);
 
-    const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
+    return () => clearTimeout(timeout);
   }, [status, search]);
 
   function changeStatus(value) {

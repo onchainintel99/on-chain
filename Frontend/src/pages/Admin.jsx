@@ -54,17 +54,12 @@ export default function Admin() {
     }
   }
 
-  /*
-   * Initial load + refresh every 5 seconds
+  /* Load once when the admin dashboard opens. The dashboard is refreshed
+   * after staff creation; automatic polling is disabled to prevent flicker
+   * and repeated requests while data is being fetched.
    */
   useEffect(() => {
     load();
-
-    const interval = setInterval(() => {
-      load();
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
 
   /*
