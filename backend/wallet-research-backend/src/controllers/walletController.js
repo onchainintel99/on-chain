@@ -692,6 +692,7 @@ async function stage1Decision(
       ![
         "approve",
         "reject",
+        "final_approve",
       ].includes(
         decision
       )
@@ -1333,7 +1334,7 @@ async function stage2Decision(
        SUBMISSION ID
     ----------------------------------------------------- */
 
-    if (!submissionId) {
+    if (decision !== "final_approve" && !submissionId) {
       return res.status(400).json({
         success: false,
         message:
@@ -1352,6 +1353,44 @@ async function stage2Decision(
         message:
           "Wallet not found",
       });
+    }
+
+    // Final Stage 2 approval is a separate manager action.
+    // Individual coin approvals never move the wallet to Stage 3.
+    if (decision === "final_approve") {
+      if (wallet.stage !== 2 || wallet.status !== STATUSES.PENDING_STAGE2) {
+        return res.status(400).json({ success: false, message: "This wallet is not in Stage 2." });
+      }
+      if (!Array.isArray(wallet.stage2Items) || wallet.stage2Items.length === 0) {
+        return res.status(400).json({ success: false, message: "Add at least one coin before final Stage 2 approval." });
+      }
+      const allApproved = wallet.stage2Items.every((coin) => coin.status === "Approved");
+      if (!allApproved) {
+        return res.status(400).json({ success: false, message: "Every submitted coin must be approved before moving to Stage 3." });
+      }
+      const first = wallet.stage2Items[0];
+      wallet.coinName = first.coinName;
+      wallet.entryPrice = first.entryPrice;
+      wallet.peakPrice = first.peakPrice;
+      wallet.exitPrice = first.exitPrice;
+      wallet.userStrategyPL = first.userStrategyPL;
+      wallet.traderStrategyPL = first.traderStrategyPL;
+      wallet.userStrategy = first.userStrategy;
+      wallet.traderStrategy = first.traderStrategy;
+      wallet.costPrice = first.entryPrice;
+      wallet.soldPrice = first.exitPrice;
+      wallet.stage = 3;
+      wallet.status = STATUSES.PENDING_STAGE3;
+      wallet.stage2ReviewedBy = req.user._id;
+      wallet.stage2ReviewedAt = new Date();
+      wallet.stage2Decision = "approve";
+      wallet.stage2Comments = String(note || "").trim();
+      wallet.stage2Completed = true;
+      wallet.stage2CompletedAt = new Date();
+      wallet.history.push({ type: HISTORY_TYPES.STAGE2_APPROVED, byUser: req.user._id, by: req.user.name, at: new Date(), detail: `Manager final-approved Stage 2. All ${wallet.stage2Items.length} coin(s) approved; wallet moved to Stage 3.` });
+      await wallet.save();
+      const finalPopulated = await populate(Wallet.findById(wallet._id));
+      return res.json({ success: true, message: "Stage 2 final-approved. Wallet moved to Stage 3.", wallet: walletResponse(finalPopulated) });
     }
 
     /* -----------------------------------------------------
@@ -1518,102 +1557,8 @@ async function stage2Decision(
       });
     }
 
-    /* -----------------------------------------------------
-       CHECK WHETHER EVERY SUBMITTED COIN IS APPROVED
-    ----------------------------------------------------- */
-
-    const allApproved =
-      wallet.stage2Items.length > 0 &&
-      wallet.stage2Items.every(
-        (stage2Item) =>
-          stage2Item.status ===
-          "Approved"
-      );
-
-    if (
-      allApproved
-    ) {
-      const first =
-        wallet.stage2Items[0];
-
-      /* -----------------------------------------------
-         KEEP LEGACY/LATEST VALUES
-      ----------------------------------------------- */
-
-      wallet.coinName =
-        first.coinName;
-
-      wallet.entryPrice =
-        first.entryPrice;
-
-      wallet.peakPrice =
-        first.peakPrice;
-
-      wallet.exitPrice =
-        first.exitPrice;
-
-      wallet.userStrategyPL =
-        first.userStrategyPL;
-
-      wallet.traderStrategyPL =
-        first.traderStrategyPL;
-
-      wallet.userStrategy =
-        first.userStrategy;
-
-      wallet.traderStrategy =
-        first.traderStrategy;
-
-      wallet.costPrice =
-        first.entryPrice;
-
-      wallet.soldPrice =
-        first.exitPrice;
-
-      /* -----------------------------------------------
-         MOVE TO STAGE 3
-      ----------------------------------------------- */
-
-      wallet.stage =
-        3;
-
-      wallet.status =
-        STATUSES.PENDING_STAGE3;
-
-      wallet.stage2ReviewedBy =
-        req.user._id;
-
-      wallet.stage2ReviewedAt =
-        at;
-
-      wallet.stage2Decision =
-        "approve";
-
-      wallet.stage2Comments =
-        cleanNote;
-
-      wallet.stage2Completed =
-        true;
-
-      wallet.stage2CompletedAt =
-        at;
-
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE2_APPROVED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
-        at,
-
-        detail:
-          `All ${wallet.stage2Items.length} Stage 2 coin(s) approved. Wallet moved to Stage 3.`,
-      });
-    }
+    // A coin-level approval updates only that coin. The wallet stays in
+    // Stage 2 until a manager explicitly uses final_approve.
 
     await wallet.save();
 
@@ -1627,10 +1572,7 @@ async function stage2Decision(
     return res.json({
       success: true,
 
-      message:
-        allApproved
-          ? "All Stage 2 coins are approved. Wallet moved to Stage 3."
-          : `Stage 2 coin ${item.coinName} approved.`,
+      message: `Stage 2 coin ${item.coinName} approved. Wallet remains in Stage 2 until final approval.` ,
 
       submission:
         item,

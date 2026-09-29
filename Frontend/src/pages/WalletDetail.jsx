@@ -500,6 +500,9 @@ export default function WalletDetail() {
   const hasStage2Data =
     stage2Items.length > 0;
 
+  const allStage2CoinsApproved =
+    hasStage2Data && stage2Items.every((item) => item.status === "Approved");
+
 
   const showStage2Actions =
     canApprove &&
@@ -895,6 +898,21 @@ export default function WalletDetail() {
         "Unable to process Stage 2 coin."
       );
 
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  async function handleStage2FinalApproval() {
+    setError("");
+    setLoading(true);
+    try {
+      const response = await stage2Decision(id, { decision: "final_approve", note });
+      setWallet(response.wallet);
+      setNote("");
+    } catch (err) {
+      setError(err?.message || "Unable to finalize Stage 2 approval.");
     } finally {
       setLoading(false);
     }
@@ -1785,7 +1803,17 @@ export default function WalletDetail() {
           STAGE 3 ADMIN FINAL APPROVAL
       =================================================== */}
 
-      {showStage3Actions && (
+            {canReviewStage2 && wallet?.stage === 2 && wallet?.status === "Pending Stage 2" && allStage2CoinsApproved && (
+        <section className="panel">
+          <h2 className="panel__title">Stage 2 Final Approval</h2>
+          <p className="page__hint">All submitted coins are approved. This button moves the wallet to Stage 3. The user can continue adding coins until this action is taken.</p>
+          <button type="button" className="btn btn--success" disabled={loading} onClick={handleStage2FinalApproval}>
+            ✓ Final Approve Stage 2 → Stage 3
+          </button>
+        </section>
+      )}
+
+{showStage3Actions && (
 
         <section className="panel">
 
