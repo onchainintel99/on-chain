@@ -15,11 +15,52 @@ import {
 
 import Badge from "../components/Badge";
 import Stage2Form from "./Stage2Form";
+import { editRejectedStage2CoinRequest } from "../lib/api";
 
 import {
   formatDateTime,
 } from "../lib/utils";
 
+
+
+function Stage2CoinEditor({ walletId, item, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [coinName, setCoinName] = useState(item.coinName || "");
+  const [entryPrice, setEntryPrice] = useState(String(item.entryPrice ?? ""));
+  const [peakPrice, setPeakPrice] = useState(String(item.peakPrice ?? ""));
+  const [exitPrice, setExitPrice] = useState(String(item.exitPrice ?? ""));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  if (item.status !== "Rejected") return null;
+  if (!editing) return <button type="button" className="btn btn--primary" onClick={() => setEditing(true)}>Edit rejected coin</button>;
+
+  async function save(event) {
+    event.preventDefault();
+    setError("");
+    const entry = Number(entryPrice), peak = Number(peakPrice), exit = Number(exitPrice);
+    if (!coinName.trim() || !Number.isFinite(entry) || entry <= 0 || !Number.isFinite(peak) || peak < 0 || !Number.isFinite(exit) || exit < 0) {
+      setError("Enter a coin name, a valid entry price above 0, and valid peak/exit prices.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await editRejectedStage2CoinRequest(walletId, item._id, { coinName: coinName.trim(), entryPrice: entry, peakPrice: peak, exitPrice: exit });
+      await onSaved();
+      setEditing(false);
+    } catch (e) { setError(e?.message || "Could not update this coin."); }
+    finally { setSaving(false); }
+  }
+
+  return <form onSubmit={save} style={{ display: "grid", gap: 10, minWidth: 230 }}>
+    <label>Coin name<input className="field__input" value={coinName} onChange={e => setCoinName(e.target.value)} required /></label>
+    <label>Entry price<input className="field__input" type="number" min="0.00000001" step="any" value={entryPrice} onChange={e => setEntryPrice(e.target.value)} required /></label>
+    <label>Peak price<input className="field__input" type="number" min="0" step="any" value={peakPrice} onChange={e => setPeakPrice(e.target.value)} required /></label>
+    <label>Exit price<input className="field__input" type="number" min="0" step="any" value={exitPrice} onChange={e => setExitPrice(e.target.value)} required /></label>
+    {error && <p role="alert" style={{ color: "#dc2626" }}>{error}</p>}
+    <div style={{ display: "flex", gap: 8 }}><button className="btn btn--success" type="submit" disabled={saving}>{saving ? "Saving…" : "Save and resubmit"}</button><button className="btn" type="button" disabled={saving} onClick={() => { setEditing(false); setError(""); }}>Cancel</button></div>
+  </form>;
+}
 
 /* =========================================================
    HISTORY LABELS
@@ -1297,6 +1338,7 @@ export default function WalletDetail() {
                     <th>Exit Price</th>
                     <th>User Strategy</th>
                     <th>Trader Strategy</th>
+                    {isOwner && wallet?.stage === 2 && <th>Action</th>}
                   </tr>
                 </thead>
 
@@ -1325,6 +1367,10 @@ export default function WalletDetail() {
                             {formatPercentage(itemTraderStrategy)}
                           </span>
                         </td>
+                        {isOwner && wallet?.stage === 2 && <td>
+                          {item.status === "Rejected" ? <Stage2CoinEditor walletId={id} item={item} onSaved={loadWallet} /> : <span>{item.status || "Pending"}</span>}
+                          {item.status === "Rejected" && item.reviewNote && <p className="page__hint">Reason: {item.reviewNote}</p>}
+                        </td>}
                       </tr>
                     );
                   })}

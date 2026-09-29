@@ -272,6 +272,13 @@ export const stage2SubmitRequest = (
   );
 
 
+export const editRejectedStage2CoinRequest = (walletId, submissionId, payload) =>
+  request(`/wallets/${walletId}/stage2-items/${submissionId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+
 /* =========================================================
    STAGE 2 APPROVAL
 ========================================================= */

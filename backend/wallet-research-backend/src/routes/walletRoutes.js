@@ -11,6 +11,7 @@ const {
   createWallet,
   stage1Decision,
   submitStage2,
+  editRejectedStage2Coin,
   stage2Decision,
   stage3Decision,
   addNote,
@@ -120,6 +121,13 @@ router.post(
  * Admin
  * =========================================================
  */
+
+router.put(
+  "/:id/stage2-items/:submissionId",
+  requireRole("user"),
+  editRejectedStage2Coin
+);
+
 
 router.post(
   "/:id/stage2-decision",

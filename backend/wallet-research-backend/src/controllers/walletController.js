@@ -1276,6 +1276,64 @@ async function completeStage2(
   }
 }
 
+
+/* =========================================================
+   EDIT A REJECTED STAGE 2 COIN (OWNER ONLY)
+========================================================= */
+async function editRejectedStage2Coin(req, res, next) {
+  try {
+    const wallet = await Wallet.findById(req.params.id);
+    if (!wallet) return res.status(404).json({ success: false, message: "Wallet not found" });
+
+    if (req.user.role !== "user" || wallet.userId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: "Only the wallet owner can edit a rejected coin" });
+    }
+    if (wallet.stage !== 2 || wallet.status !== STATUSES.PENDING_STAGE2) {
+      return res.status(400).json({ success: false, message: "This wallet is not open for Stage 2 edits" });
+    }
+
+    const submissionId = String(req.params.submissionId || "");
+    const item = wallet.stage2Items.id(submissionId);
+    if (!item) return res.status(404).json({ success: false, message: "Coin submission not found" });
+    if (item.status !== "Rejected") {
+      return res.status(400).json({ success: false, message: "Only rejected coins can be edited" });
+    }
+
+    const coinName = String(req.body.coinName || "").trim();
+    const entry = Number(req.body.entryPrice);
+    const peak = Number(req.body.peakPrice);
+    const exit = Number(req.body.exitPrice);
+    if (!coinName) return res.status(400).json({ success: false, message: "Coin name is required" });
+    if (!Number.isFinite(entry) || entry <= 0) return res.status(400).json({ success: false, message: "Entry price must be greater than 0" });
+    if (!Number.isFinite(peak) || peak < 0) return res.status(400).json({ success: false, message: "Peak price is invalid" });
+    if (!Number.isFinite(exit) || exit < 0) return res.status(400).json({ success: false, message: "Exit price is invalid" });
+
+    const userPL = Number((((peak - entry) / entry) * 100).toFixed(2));
+    const traderPL = Number((((exit - entry) / entry) * 100).toFixed(2));
+    item.coinName = coinName;
+    item.entryPrice = entry;
+    item.peakPrice = peak;
+    item.exitPrice = exit;
+    item.userStrategyPL = userPL;
+    item.traderStrategyPL = traderPL;
+    item.userStrategy = userPL;
+    item.traderStrategy = traderPL;
+    item.status = "Pending";
+    item.decision = null;
+    item.reviewedBy = null;
+    item.reviewedByName = "";
+    item.reviewedByEmail = "";
+    item.reviewedAt = null;
+    item.reviewNote = "";
+    item.submittedAt = new Date();
+
+    wallet.history.push({ type: HISTORY_TYPES.STAGE2_SUBMITTED, byUser: req.user._id, by: req.user.name, at: new Date(), detail: `Rejected Stage 2 coin ${coinName} edited and resubmitted for review.` });
+    await wallet.save();
+    const populated = await populate(Wallet.findById(wallet._id));
+    return res.json({ success: true, message: `${coinName} updated and resubmitted for review. The wallet remains in Stage 2.`, wallet: walletResponse(populated) });
+  } catch (error) { next(error); }
+}
+
 /* =========================================================
    STAGE 2 DECISION
 ========================================================= */
@@ -1863,6 +1921,7 @@ module.exports = {
   stage1Decision,
 
   submitStage2,
+  editRejectedStage2Coin,
   completeStage2,
   stage2Decision,
 
