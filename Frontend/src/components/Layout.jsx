@@ -104,6 +104,12 @@ export default function Layout() {
       icon: "🏆",
     },
 
+    {
+      to: "/statistics",
+      label: "Statistics",
+      icon: "▥",
+    },
+
   ];
 
 

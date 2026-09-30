@@ -23,6 +23,7 @@ import Wallets from "./pages/Wallets";
 import WalletDetail from "./pages/WalletDetail";
 import Admin from "./pages/Admin";
 import Leaderboard from "./pages/Leaderboard";
+import Statistics from "./pages/Statistics";
 
 export default function App() {
   return (
@@ -79,6 +80,11 @@ export default function App() {
             <Route
               path="/leaderboard"
               element={<Leaderboard />}
+            />
+
+            <Route
+              path="/statistics"
+              element={<Statistics />}
             />
 
             {/* =================================================

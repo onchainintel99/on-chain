@@ -30,42 +30,6 @@ const STATUS_OPTIONS = [
 ];
 
 
-/*
- * Stage 2 strategy buckets.
- *
- * Below 0 = negative strategy
- * 0 = exactly zero
- * 0–50 = > 0 and <= 50
- * 51–100 = > 50 and <= 100
- * Above 100 = > 100
- */
-const STRATEGY_RANGES = [
-  { key: "all", label: "All" },
-  { key: "below-0", label: "Below 0" },
-  { key: "zero", label: "0" },
-  { key: "0-50", label: "0–50" },
-  { key: "51-100", label: "51–100" },
-  { key: "above-100", label: "Above 100" },
-];
-
-
-function matchesStrategyRange(value, range) {
-  if (range === "all") return true;
-
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return false;
-
-  if (range === "below-0") return number < 0;
-  if (range === "zero") return number === 0;
-  if (range === "0-50") return number > 0 && number <= 50;
-  if (range === "51-100") return number > 50 && number <= 100;
-  if (range === "above-100") return number > 100;
-
-  return true;
-}
-
-
 function getStage2Items(wallet) {
   if (
     Array.isArray(wallet?.stage2Items) &&
@@ -103,59 +67,6 @@ function getStage2Items(wallet) {
 }
 
 
-function getStatsValue(stats, key) {
-  return stats?.[key] ?? 0;
-}
-
-function createEmptyStrategyStats() {
-  return {
-    below0: 0,
-    zero: 0,
-    "0to50": 0,
-    "51to100": 0,
-    above100: 0,
-  };
-}
-
-function calculateWalletStrategyStats(wallet) {
-  const userStrategy = createEmptyStrategyStats();
-  const traderStrategy = createEmptyStrategyStats();
-
-  const items = getStage2Items(wallet).filter(
-    (item) => item && item.coinName
-  );
-
-  const addToBucket = (stats, value) => {
-    const number = Number(value);
-
-    if (!Number.isFinite(number)) return;
-
-    if (number < 0) stats.below0 += 1;
-    else if (number === 0) stats.zero += 1;
-    else if (number <= 50) stats["0to50"] += 1;
-    else if (number <= 100) stats["51to100"] += 1;
-    else stats.above100 += 1;
-  };
-
-  items.forEach((item) => {
-    addToBucket(
-      userStrategy,
-      item.userStrategyPL ?? item.userStrategy
-    );
-    addToBucket(
-      traderStrategy,
-      item.traderStrategyPL ?? item.traderStrategy
-    );
-  });
-
-  return {
-    totalItems: items.length,
-    userStrategy,
-    traderStrategy,
-  };
-}
-
-
 export default function Wallets() {
   const {
     getWallets,
@@ -175,8 +86,6 @@ export default function Wallets() {
 
   const [wallets, setWallets] = useState([]);
   const [search, setSearch] = useState("");
-  const [userStrategyRange, setUserStrategyRange] = useState("all");
-  const [traderStrategyRange, setTraderStrategyRange] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -240,7 +149,8 @@ export default function Wallets() {
 
   /*
    * Flatten Stage 2 wallets into coin rows.
-   * One wallet can now contain N coin entries.
+   * All coin entries remain visible here; aggregate statistics live on the
+   * dedicated Statistics page.
    */
   const stage2Rows = useMemo(() => {
     if (!isStage2) return [];
@@ -249,86 +159,14 @@ export default function Wallets() {
       getStage2Items(wallet).map((item, index) => ({
         ...wallet,
         ...item,
-        rowId:
-          `${wallet.id}-stage2-${item._id || index}`,
+        rowId: `${wallet.id}-stage2-${item._id || index}`,
         walletId: wallet.id,
         itemIndex: index,
       }))
     );
   }, [wallets, isStage2]);
 
-  const visibleStage2Rows = useMemo(() => {
-    if (!isStage2) return [];
-
-    return stage2Rows.filter((row) => {
-      const userPL =
-        row.userStrategyPL ?? row.userStrategy;
-      const traderPL =
-        row.traderStrategyPL ?? row.traderStrategy;
-
-      return (
-        matchesStrategyRange(
-          userPL,
-          userStrategyRange
-        ) &&
-        matchesStrategyRange(
-          traderPL,
-          traderStrategyRange
-        )
-      );
-    });
-  }, [
-    stage2Rows,
-    isStage2,
-    userStrategyRange,
-    traderStrategyRange,
-  ]);
-
-  const visibleStage2WalletCount =
-    useMemo(() => {
-      if (!isStage2) return 0;
-
-      return new Set(
-        visibleStage2Rows.map(
-          (row) => row.walletId
-        )
-      ).size;
-    }, [
-      visibleStage2Rows,
-      isStage2,
-    ]);
-
-  const totalStage2WalletCount =
-    useMemo(() => {
-      if (!isStage2) return 0;
-
-      return new Set(
-        stage2Rows.map(
-          (row) => row.walletId
-        )
-      ).size;
-    }, [
-      stage2Rows,
-      isStage2,
-    ]);
-
-  const visibleRows =
-    isStage2
-      ? visibleStage2Rows
-      : wallets;
-
-  function resetStrategyFilters() {
-    setUserStrategyRange("all");
-    setTraderStrategyRange("all");
-  }
-
-  const statColumns = [
-    ["below0", "Below 0"],
-    ["zero", "0"],
-    ["0to50", "0–50"],
-    ["51to100", "51–100"],
-    ["above100", "Above 100"],
-  ];
+  const visibleRows = isStage2 ? stage2Rows : wallets;
 
   return (
     <div className="page">
@@ -388,192 +226,6 @@ export default function Wallets() {
         </div>
       </section>
 
-      {isStage2 && (
-        <>
-          {/* =================================================
-              STAGE 2 RANGE FILTERS
-          ================================================= */}
-          <section className="stage2-strategy-filter-panel">
-            <div className="stage2-strategy-filter-row">
-              <div className="stage2-strategy-filter-heading">
-                <span className="stage2-strategy-filter-title">
-                  User Strategy
-                </span>
-                <span className="stage2-strategy-filter-value">
-                  {STRATEGY_RANGES.find(
-                    (item) =>
-                      item.key === userStrategyRange
-                  )?.label}
-                </span>
-              </div>
-
-              <div
-                className="stage2-strategy-range-list"
-                aria-label="User Strategy range"
-              >
-                {STRATEGY_RANGES.map((item) => (
-                  <button
-                    key={`user-${item.key}`}
-                    type="button"
-                    className={`stage2-strategy-range ${
-                      userStrategyRange === item.key
-                        ? "stage2-strategy-range--active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setUserStrategyRange(item.key)
-                    }
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="stage2-strategy-filter-row">
-              <div className="stage2-strategy-filter-heading">
-                <span className="stage2-strategy-filter-title">
-                  Trader Strategy
-                </span>
-                <span className="stage2-strategy-filter-value">
-                  {STRATEGY_RANGES.find(
-                    (item) =>
-                      item.key === traderStrategyRange
-                  )?.label}
-                </span>
-              </div>
-
-              <div
-                className="stage2-strategy-range-list"
-                aria-label="Trader Strategy range"
-              >
-                {STRATEGY_RANGES.map((item) => (
-                  <button
-                    key={`trader-${item.key}`}
-                    type="button"
-                    className={`stage2-strategy-range ${
-                      traderStrategyRange === item.key
-                        ? "stage2-strategy-range--active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setTraderStrategyRange(item.key)
-                    }
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="stage2-strategy-filter-footer">
-              <span>
-                Showing <strong>{visibleStage2WalletCount}</strong> of{" "}
-                <strong>{totalStage2WalletCount}</strong> Stage 2 wallets
-              </span>
-
-              {(userStrategyRange !== "all" ||
-                traderStrategyRange !== "all") && (
-                <button
-                  type="button"
-                  className="stage2-strategy-clear"
-                  onClick={resetStrategyFilters}
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          </section>
-
-          {/* =================================================
-              STAGE 2 PER-WALLET STRATEGY COUNT BOARD
-
-              Each wallet gets its own independent counts.
-          ================================================= */}
-          <section className="stage2-strategy-stats-panel">
-            <div className="stage2-strategy-stats-header">
-              <div>
-                <span className="stage2-strategy-stats-eyebrow">
-                  STAGE 2 STATISTICS
-                </span>
-                <h2>Strategy distribution by wallet</h2>
-              </div>
-            </div>
-
-            {wallets.length === 0 ? (
-              <div className="stage2-strategy-stats-note">No Stage 2 wallets found.</div>
-            ) : (
-              <div className="stage2-wallet-stats-list">
-                {wallets.map((wallet) => {
-                  const stats = calculateWalletStrategyStats(wallet);
-
-                  return (
-                    <div
-                      className="stage2-wallet-stats-card"
-                      key={`wallet-stats-${wallet.id || wallet._id || wallet.tradeId}`}
-                    >
-                      <div className="stage2-wallet-stats-card-header">
-                        <div>
-                          <span className="stage2-strategy-stats-eyebrow">
-                            WALLET
-                          </span>
-                          <h3>
-                            {wallet.tradeId || wallet.id || "Wallet"}
-                          </h3>
-                        </div>
-
-                        <div className="stage2-strategy-stats-total">
-                          <span>Total coin entries</span>
-                          <strong>{stats.totalItems}</strong>
-                        </div>
-                      </div>
-
-                      <div className="stage2-strategy-stats-row">
-                        <div className="stage2-strategy-stats-label">
-                          User Strategy
-                        </div>
-
-                        {statColumns.map(([key, label]) => (
-                          <div
-                            className="stage2-strategy-stat-cell"
-                            key={`wallet-${wallet.id || wallet._id || wallet.tradeId}-user-${key}`}
-                          >
-                            <span>{label}</span>
-                            <strong>{getStatsValue(stats.userStrategy, key)}</strong>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="stage2-strategy-stats-row">
-                        <div className="stage2-strategy-stats-label">
-                          Trader Strategy
-                        </div>
-
-                        {statColumns.map(([key, label]) => (
-                          <div
-                            className="stage2-strategy-stat-cell"
-                            key={`wallet-${wallet.id || wallet._id || wallet.tradeId}-trader-${key}`}
-                          >
-                            <span>{label}</span>
-                            <strong>{getStatsValue(stats.traderStrategy, key)}</strong>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <p className="stage2-strategy-stats-note">
-              Counts are calculated separately for each wallet and per coin entry.
-              Negative values are Below 0, zero is 0, 0–50 is above 0 through 50,
-              51–100 is above 50 through 100, and Above 100 is greater than 100.
-            </p>
-          </section>
-
-        </>
-      )}
 
       <section className="panel">
         <div className="wallet-toolbar">
@@ -615,8 +267,8 @@ export default function Wallets() {
 
             <p className="page__hint">
               {isStage2
-                ? `${visibleStage2WalletCount} of ${totalStage2WalletCount} Stage 2 wallets`
-                : `${wallets.length} wallet${wallets.length === 1 ? "" : "s"}`}
+                ? "All submitted coin entries for Stage 2"
+                : "Review and manage wallets in the approval pipeline"}
             </p>
           </div>
         </div>
@@ -771,8 +423,9 @@ export default function Wallets() {
                         <Link
                           to={`/wallets/${wallet.walletId || wallet.id}`}
                           className="btn btn--small btn--primary"
+                          title={isStage2 ? "Open this Trade ID and view every coin submitted under it" : "View wallet details"}
                         >
-                          View
+                          {isStage2 ? "View all coins" : "View"}
                         </Link>
                       </td>
                     </tr>
@@ -787,7 +440,7 @@ export default function Wallets() {
                     >
                       {isStage2
                         ? wallets.length
-                          ? "No Stage 2 coin entries match the selected strategy ranges."
+                          ? "No Stage 2 coin entries are available."
                           : "No wallets are currently waiting for Stage 2."
                         : "No wallets found in this stage."}
                     </td>
