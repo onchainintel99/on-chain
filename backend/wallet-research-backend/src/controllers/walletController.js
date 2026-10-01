@@ -1356,6 +1356,7 @@ async function stage2Decision(
 
     if (
       ![
+        "manager1",
         "manager2",
         "admin",
       ].includes(
@@ -1365,7 +1366,7 @@ async function stage2Decision(
       return res.status(403).json({
         success: false,
         message:
-          "Only Manager 2 or Admin can review individual Stage 2 coins",
+          "Only Manager 1, Manager 2 and Admin can approve or reject Stage 2",
       });
     }
 

@@ -412,6 +412,7 @@ export default function WalletDetail() {
 
   const canReviewStage2 =
     [
+      "manager1",
       "manager2",
       "admin",
     ].includes(
