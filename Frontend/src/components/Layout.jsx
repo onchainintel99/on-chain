@@ -104,13 +104,16 @@ export default function Layout() {
       icon: "🏆",
     },
 
-    {
+  ];
+
+  // Statistics is available to managers and administrators only.
+  if (["manager1", "manager2", "admin"].includes(role)) {
+    navigation.push({
       to: "/statistics",
       label: "Statistics",
       icon: "▥",
-    },
-
-  ];
+    });
+  }
 
 
   /* =========================================================

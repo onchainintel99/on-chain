@@ -84,7 +84,11 @@ export default function App() {
 
             <Route
               path="/statistics"
-              element={<Statistics />}
+              element={
+                <RequireRole roles={["manager1", "manager2", "admin"]}>
+                  <Statistics />
+                </RequireRole>
+              }
             />
 
             {/* =================================================

@@ -5,8 +5,8 @@ import { useData } from "../lib/store";
 const BUCKETS = [
   ["below0", "Below 0"],
   ["zero", "0"],
-  ["0to50", "0–50"],
-  ["51to100", "51–100"],
+  ["0to49", "0–49"],
+  ["50to100", "50–100"],
   ["above100", "Above 100"],
 ];
 
@@ -41,14 +41,14 @@ function getStrategyValue(item, kind) {
 }
 
 function makeDistribution(items, kind) {
-  const counts = { below0: 0, zero: 0, "0to50": 0, "51to100": 0, above100: 0 };
+  const counts = { below0: 0, zero: 0, "0to49": 0, "50to100": 0, above100: 0 };
   items.forEach((item) => {
     const value = getStrategyValue(item, kind);
     if (value === null) return;
     if (value < 0) counts.below0 += 1;
     else if (value === 0) counts.zero += 1;
-    else if (value <= 50) counts["0to50"] += 1;
-    else if (value <= 100) counts["51to100"] += 1;
+    else if (value < 50) counts["0to49"] += 1;
+    else if (value <= 100) counts["50to100"] += 1;
     else counts.above100 += 1;
   });
   return counts;
@@ -186,8 +186,8 @@ export default function Statistics() {
                     <StatRow label="User Strategy" values={card.userStats} />
                     <StatRow label="Trader Strategy" values={card.traderStats} />
                     <p className="stage2-strategy-stats-note">
-                      Below 0 means negative; 0 means exactly zero; 0–50 means above 0 through 50;
-                      51–100 means above 50 through 100; Above 100 means greater than 100.
+                      Below 0 means negative; 0 means exactly zero; 0–49 means above 0 and below 50;
+                      50–100 means 50 through 100 inclusive; Above 100 means greater than 100.
                       Counts include only coin entries with a recorded strategy value.
                     </p>
 
