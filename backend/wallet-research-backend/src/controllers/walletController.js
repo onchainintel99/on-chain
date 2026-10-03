@@ -1720,12 +1720,24 @@ async function stage3Decision(
       });
     }
 
-    // Admin must first work on Stage 3A.
-    if (wallet.stage3Substage !== "3A") {
+    // Stage 3A supports both actions. Once Admin sends the wallet to 3B,
+    // only the final "successful" action is allowed from Stage 3B.
+    if (wallet.stage3Substage !== "3A" && wallet.stage3Substage !== "3B") {
       return res.status(400).json({
         success: false,
-        message: `This wallet is currently in Stage ${wallet.stage3Substage || "3"} and cannot use the Stage 3A action.`,
+        message: `This wallet is currently in Stage ${wallet.stage3Substage || "3"} and cannot be handled by the Stage 3 workflow.`,
       });
+    }
+
+    if (wallet.stage3Substage === "3B" && decision !== "successful") {
+      return res.status(400).json({
+        success: false,
+        message: "A wallet in Stage 3B can only be marked Successful by Admin.",
+      });
+    }
+
+    if (wallet.stage3Substage === "3A" && decision === "successful") {
+      // Direct 3A -> Successful remains supported for Admin.
     }
 
     const at = new Date();

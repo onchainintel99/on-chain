@@ -577,7 +577,7 @@ export default function WalletDetail() {
     isAdmin &&
     wallet?.status ===
       "Pending Stage 3" &&
-    (wallet?.stage3Substage === "3A" || !wallet?.stage3Substage);
+    (wallet?.stage3Substage === "3A" || wallet?.stage3Substage === "3B" || !wallet?.stage3Substage);
 
 
   /* =======================================================
@@ -1937,8 +1937,9 @@ export default function WalletDetail() {
             </strong>
 
             <p>
-              Admin controls Stage 3. From Stage 3A, Admin can either send the wallet to
-              Stage 3B or mark it Successful.
+              Admin controls Stage 3. From Stage 3A, Admin can send the wallet to Stage 3B
+              or mark it Successful. Once it reaches Stage 3B, only Admin can complete the
+              final Successful action.
             </p>
 
           </div>
@@ -1959,14 +1960,16 @@ export default function WalletDetail() {
 
           <div className="action-block__buttons">
 
-            <button
-              type="button"
-              className="btn"
-              disabled={loading}
-              onClick={() => handleStage3("send_3b")}
-            >
-              → Send to Stage 3B
-            </button>
+            {wallet.stage3Substage !== "3B" && (
+              <button
+                type="button"
+                className="btn"
+                disabled={loading}
+                onClick={() => handleStage3("send_3b")}
+              >
+                → Send to Stage 3B
+              </button>
+            )}
 
             <button
               type="button"
@@ -1974,7 +1977,7 @@ export default function WalletDetail() {
               disabled={loading}
               onClick={() => handleStage3("successful")}
             >
-              ✓ Successful
+              ✓ {wallet.stage3Substage === "3B" ? "Final Successful" : "Successful"}
             </button>
 
           </div>

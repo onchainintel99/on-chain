@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Footer from "./Footer";
 
 import {
   NavLink,
@@ -460,6 +461,8 @@ export default function Layout() {
         <div className="shell__content">
 
           <Outlet />
+
+          <Footer />
 
         </div>
 
