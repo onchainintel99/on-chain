@@ -91,6 +91,9 @@ const LABELS = {
   stage3_rejected:
     "Stage 3 rejected",
 
+  stage3_sent_to_3b:
+    "Stage 3A sent to Stage 3B",
+
   note:
     "Note",
 };
@@ -560,7 +563,8 @@ export default function WalletDetail() {
   const showStage3Actions =
     isAdmin &&
     wallet?.status ===
-      "Pending Stage 3";
+      "Pending Stage 3" &&
+    (wallet?.stage3Substage === "3A" || !wallet?.stage3Substage);
 
 
   /* =======================================================
@@ -1127,7 +1131,7 @@ export default function WalletDetail() {
 
             {
               number: 3,
-              label: "Stage 3",
+              label: wallet.stage3Substage === "3B" ? "Stage 3B" : "Stage 3A",
             },
 
             {
@@ -1850,12 +1854,15 @@ export default function WalletDetail() {
           STAGE 3 ADMIN FINAL APPROVAL
       =================================================== */}
 
-            {canReviewStage2 && wallet?.stage === 2 && wallet?.status === "Pending Stage 2" && allStage2CoinsApproved && (
+            {role === "manager2" && wallet?.stage === 2 && wallet?.status === "Pending Stage 2" && allStage2CoinsApproved && (
         <section className="panel">
           <h2 className="panel__title">Stage 2 Final Approval</h2>
-          <p className="page__hint">All submitted coins are approved. This button moves the wallet to Stage 3. The user can continue adding coins until this action is taken.</p>
+          <p className="page__hint">
+            All submitted coins are approved. Manager 2 can now move this wallet to Stage 3A.
+            Individual coin approvals never move the wallet forward.
+          </p>
           <button type="button" className="btn btn--success" disabled={loading} onClick={handleStage2FinalApproval}>
-            ✓ Final Approve Stage 2 → Stage 3
+            ✓ Manager 2: Approve Stage 2 → Stage 3A
           </button>
         </section>
       )}
@@ -1890,14 +1897,14 @@ export default function WalletDetail() {
           <div className="status-callout">
 
             <strong>
-              Wallet passed Stage 1
-              and Stage 2.
+              {wallet.stage3Substage === "3B"
+                ? "Wallet is in Stage 3B."
+                : "Wallet is in Stage 3A."}
             </strong>
 
             <p>
-              Final Admin approval is
-              required before the wallet
-              becomes Successful.
+              Admin controls Stage 3. From Stage 3A, Admin can either send the wallet to
+              Stage 3B or mark it Successful.
             </p>
 
           </div>
@@ -1920,29 +1927,20 @@ export default function WalletDetail() {
 
             <button
               type="button"
-              className="btn btn--success"
+              className="btn"
               disabled={loading}
-              onClick={() =>
-                handleStage3(
-                  "approve"
-                )
-              }
+              onClick={() => handleStage3("send_3b")}
             >
-              ✓ Final Approve → Successful
+              → Send to Stage 3B
             </button>
-
 
             <button
               type="button"
-              className="btn btn--danger"
+              className="btn btn--success"
               disabled={loading}
-              onClick={() =>
-                handleStage3(
-                  "reject"
-                )
-              }
+              onClick={() => handleStage3("successful")}
             >
-              ✕ Reject Stage 3
+              ✓ Successful
             </button>
 
           </div>
@@ -1995,7 +1993,7 @@ export default function WalletDetail() {
 
             {wallet.status ===
               "Pending Stage 3" &&
-              "Stage 2 has passed. The wallet is waiting for final Admin approval."}
+              `Stage ${wallet.stage3Substage || "3A"} is active. Admin controls the Stage 3 workflow.`}
 
 
             {wallet.status ===

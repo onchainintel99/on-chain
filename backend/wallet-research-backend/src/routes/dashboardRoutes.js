@@ -8,6 +8,8 @@ const {
   adminOverview,
   strategyStats,
   leaderboard,
+  earnings,
+  addEarning,
 } = require("../controllers/dashboardController");
 
 const {
@@ -63,6 +65,24 @@ router.get(
   "/leaderboard",
   protect,
   leaderboard
+);
+
+
+/* =========================================================
+   EARNINGS / SUCCESS TIERS
+========================================================= */
+
+router.get(
+  "/earnings",
+  protect,
+  earnings
+);
+
+router.post(
+  "/earnings",
+  protect,
+  requireRole("admin"),
+  addEarning
 );
 
 module.exports = router;

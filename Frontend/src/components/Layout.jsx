@@ -115,6 +115,12 @@ export default function Layout() {
     });
   }
 
+  navigation.push({
+    to: "/earnings",
+    label: "Earnings & Tiers",
+    icon: "₹",
+  });
+
 
   /* =========================================================
      ADD WALLET

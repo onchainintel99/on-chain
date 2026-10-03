@@ -162,6 +162,21 @@ export const strategyStatsRequest =
     );
 
 
+
+/* =========================================================
+   EARNINGS / SUCCESS TIERS
+========================================================= */
+
+export const earningsRequest = () =>
+  request("/dashboard/earnings");
+
+export const addEarningRequest = (payload) =>
+  request("/dashboard/earnings", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+
 /* =========================================================
    WALLETS
 ========================================================= */

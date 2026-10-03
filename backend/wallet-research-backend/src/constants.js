@@ -25,6 +25,7 @@ const HISTORY_TYPES = Object.freeze({
 
   STAGE3_APPROVED: "stage3_approved",
   STAGE3_REJECTED: "stage3_rejected",
+  STAGE3_SENT_TO_3B: "stage3_sent_to_3b",
 
   NOTE: "note",
 });

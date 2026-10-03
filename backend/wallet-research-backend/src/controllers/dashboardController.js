@@ -1,9 +1,37 @@
+const mongoose = require("mongoose");
 const Wallet = require("../models/Wallet");
 const User = require("../models/User");
 
 const {
   STATUSES,
 } = require("../constants");
+
+/* =========================================================
+   SUCCESS TIER
+   Tier is based only on successfully completed wallets.
+========================================================= */
+
+function getSuccessTier(successfulWallets) {
+  const count = Number(successfulWallets) || 0;
+
+  if (count >= 3500) return { key: "diamond", label: "Diamond", level: 7, min: 3500 };
+  if (count >= 1001) return { key: "gold2", label: "Gold 2", level: 6, min: 1001 };
+  if (count >= 751) return { key: "gold1", label: "Gold 1", level: 5, min: 751 };
+  if (count >= 501) return { key: "bronze2", label: "Bronze 2", level: 4, min: 501 };
+  if (count >= 251) return { key: "bronze1", label: "Bronze 1", level: 3, min: 251 };
+  if (count >= 101) return { key: "silver2", label: "Silver 2", level: 2, min: 101 };
+  return { key: "silver1", label: "Silver 1", level: 1, min: 0 };
+}
+
+const SUCCESS_TIERS = [
+  { key: "silver1", label: "Silver 1", min: 0, max: 100 },
+  { key: "silver2", label: "Silver 2", min: 101, max: 250 },
+  { key: "bronze1", label: "Bronze 1", min: 251, max: 500 },
+  { key: "bronze2", label: "Bronze 2", min: 501, max: 750 },
+  { key: "gold1", label: "Gold 1", min: 751, max: 1000 },
+  { key: "gold2", label: "Gold 2", min: 1001, max: 3499 },
+  { key: "diamond", label: "Diamond", min: 3500, max: null },
+];
 
 /* =========================================================
    GENERAL DASHBOARD
@@ -178,6 +206,8 @@ async function adminOverview(
               userSuccessful,
 
               userFailed,
+
+              userRecord,
             ] =
               await Promise.all([
                 Wallet.countDocuments({
@@ -226,6 +256,8 @@ async function adminOverview(
                   status:
                     STATUSES.FAILED,
                 }),
+
+                User.findById(u._id).select("earnings").lean(),
               ]);
 
             return {
@@ -263,6 +295,18 @@ async function adminOverview(
 
               failed:
                 userFailed,
+
+              successfulWallets:
+                userSuccessful,
+
+              tier:
+                getSuccessTier(userSuccessful),
+
+              totalEarnings:
+                (userRecord?.earnings || []).reduce(
+                  (sum, item) => sum + Number(item.amount || 0),
+                  0
+                ),
             };
           }
         )
@@ -902,6 +946,144 @@ async function leaderboard(
 }
 
 /* =========================================================
+   EARNINGS / PAYMENTS
+========================================================= */
+
+async function earnings(req, res, next) {
+  try {
+    const isAdmin = req.user.role === "admin";
+
+    if (isAdmin) {
+      const users = await User.find({ role: "user" })
+        .select("name email earnings")
+        .sort({ name: 1 })
+        .lean();
+
+      const rows = await Promise.all(
+        users.map(async (user) => {
+          const successfulWallets = await Wallet.countDocuments({
+            userId: user._id,
+            status: STATUSES.SUCCESSFUL,
+          });
+
+          const records = user.earnings || [];
+          const totalEarnings = records.reduce(
+            (sum, item) => sum + Number(item.amount || 0),
+            0
+          );
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            earnings: records,
+            totalEarnings,
+            successfulWallets,
+            tier: getSuccessTier(successfulWallets),
+          };
+        })
+      );
+
+      return res.json({
+        success: true,
+        isAdmin: true,
+        tiers: SUCCESS_TIERS,
+        users: rows,
+      });
+    }
+
+    const user = await User.findById(req.user._id)
+      .select("name email earnings")
+      .lean();
+
+    const successfulWallets = await Wallet.countDocuments({
+      userId: req.user._id,
+      status: STATUSES.SUCCESSFUL,
+    });
+
+    const records = user?.earnings || [];
+    const totalEarnings = records.reduce(
+      (sum, item) => sum + Number(item.amount || 0),
+      0
+    );
+
+    return res.json({
+      success: true,
+      isAdmin: false,
+      tiers: SUCCESS_TIERS,
+      user: {
+        id: req.user._id.toString(),
+        name: user?.name || req.user.name,
+        email: user?.email || req.user.email,
+        earnings: records,
+        totalEarnings,
+        successfulWallets,
+        tier: getSuccessTier(successfulWallets),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function addEarning(req, res, next) {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only Admin can add earning/payment details.",
+      });
+    }
+
+    const userId = String(req.body.userId || "").trim();
+    const amount = Number(req.body.amount);
+    const note = String(req.body.note || "").trim();
+    const paidAt = req.body.paidAt ? new Date(req.body.paidAt) : new Date();
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Valid user is required." });
+    }
+
+    if (!Number.isFinite(amount) || amount < 0) {
+      return res.status(400).json({ success: false, message: "Amount must be a valid non-negative number." });
+    }
+
+    if (Number.isNaN(paidAt.getTime())) {
+      return res.status(400).json({ success: false, message: "Payment date is invalid." });
+    }
+
+    const user = await User.findOne({ _id: userId, role: "user" });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    user.earnings.push({
+      amount,
+      note,
+      paidAt,
+      addedBy: req.user._id,
+      addedByName: req.user.name || req.user.email || "Admin",
+    });
+
+    await user.save();
+
+    const totalEarnings = user.earnings.reduce(
+      (sum, item) => sum + Number(item.amount || 0),
+      0
+    );
+
+    return res.json({
+      success: true,
+      message: "Earning/payment detail added successfully.",
+      earning: user.earnings[user.earnings.length - 1],
+      totalEarnings,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* =========================================================
    EXPORT
 ========================================================= */
 
@@ -910,4 +1092,6 @@ module.exports = {
   adminOverview,
   strategyStats,
   leaderboard,
+  earnings,
+  addEarning,
 };

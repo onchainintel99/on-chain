@@ -24,6 +24,7 @@ import WalletDetail from "./pages/WalletDetail";
 import Admin from "./pages/Admin";
 import Leaderboard from "./pages/Leaderboard";
 import Statistics from "./pages/Statistics";
+import Earnings from "./pages/Earnings";
 
 export default function App() {
   return (
@@ -89,6 +90,11 @@ export default function App() {
                   <Statistics />
                 </RequireRole>
               }
+            />
+
+            <Route
+              path="/earnings"
+              element={<Earnings />}
             />
 
             {/* =================================================

@@ -291,7 +291,15 @@ const walletSchema = new mongoose.Schema(
 
     stage3Decision: {
       type: String,
-      enum: ["approve", "reject", null],
+      enum: ["approve", "reject", "send_3b", "successful", null],
+      default: null,
+    },
+
+    // Stage 3 is handled by Admin in two sub-stages.
+    // Manager 2 moves the wallet into 3A after Stage 2.
+    stage3Substage: {
+      type: String,
+      enum: ["3A", "3B", "SUCCESSFUL", null],
       default: null,
     },
 

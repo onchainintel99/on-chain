@@ -1414,9 +1414,15 @@ async function stage2Decision(
       });
     }
 
-    // Final Stage 2 approval is a separate manager action.
+    // Final Stage 2 approval is a separate Manager 2 action.
     // Individual coin approvals never move the wallet to Stage 3.
     if (decision === "final_approve") {
+      if (req.user.role !== "manager2") {
+        return res.status(403).json({
+          success: false,
+          message: "Only Manager 2 can move a wallet from Stage 2 to Stage 3.",
+        });
+      }
       if (wallet.stage !== 2 || wallet.status !== STATUSES.PENDING_STAGE2) {
         return res.status(400).json({ success: false, message: "This wallet is not in Stage 2." });
       }
@@ -1440,6 +1446,7 @@ async function stage2Decision(
       wallet.soldPrice = first.exitPrice;
       wallet.stage = 3;
       wallet.status = STATUSES.PENDING_STAGE3;
+      wallet.stage3Substage = "3A";
       wallet.stage2ReviewedBy = req.user._id;
       wallet.stage2ReviewedAt = new Date();
       wallet.stage2Decision = "approve";
@@ -1656,159 +1663,97 @@ async function stage3Decision(
   next
 ) {
   try {
-    if (
-      req.user.role !==
-      "admin"
-    ) {
+    if (req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message:
-          "Only Admin can perform final Stage 3 approval",
+        message: "Only Admin can handle Stage 3A and Stage 3B.",
       });
     }
 
-    const {
-      decision,
-      note = "",
-    } = req.body;
+    const { decision, note = "" } = req.body;
 
-    if (
-      ![
-        "approve",
-        "reject",
-      ].includes(
-        decision
-      )
-    ) {
+    if (!["send_3b", "successful"].includes(decision)) {
       return res.status(400).json({
         success: false,
-        message:
-          "Decision must be approve or reject",
+        message: "Decision must be send_3b or successful.",
       });
     }
 
-    const wallet =
-      await Wallet.findById(
-        req.params.id
-      );
+    const wallet = await Wallet.findById(req.params.id);
 
     if (!wallet) {
       return res.status(404).json({
         success: false,
-        message:
-          "Wallet not found",
+        message: "Wallet not found",
       });
     }
 
     if (
       wallet.stage !== 3 ||
-      wallet.status !==
-        STATUSES.PENDING_STAGE3
+      wallet.status !== STATUSES.PENDING_STAGE3
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "This wallet is not waiting for final Stage 3 approval",
+        message: "This wallet is not waiting for Stage 3 Admin action.",
       });
     }
 
-    const at =
-      new Date();
-
-    wallet.stage3ReviewedBy =
-      req.user._id;
-
-    wallet.stage3ReviewedAt =
-      at;
-
-    wallet.stage3Decision =
-      decision;
-
-    wallet.stage3Comments =
-      note.trim();
-
-    if (
-      decision === "approve"
-    ) {
-      wallet.stage =
-        3;
-
-      wallet.status =
-        STATUSES.SUCCESSFUL;
-
-      wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE3_APPROVED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
-        at,
-
-        detail:
-          `Final Stage 3 approval completed by Admin ${req.user.name}. Wallet is now Successful.${
-            note.trim()
-              ? ` Note: ${note.trim()}`
-              : ""
-          }`,
+    // Admin must first work on Stage 3A.
+    if (wallet.stage3Substage !== "3A") {
+      return res.status(400).json({
+        success: false,
+        message: `This wallet is currently in Stage ${wallet.stage3Substage || "3"} and cannot use the Stage 3A action.`,
       });
     }
 
-    if (
-      decision === "reject"
-    ) {
-      wallet.status =
-        STATUSES.FAILED;
+    const at = new Date();
+    const cleanNote = String(note || "").trim();
 
-      wallet.failedBy =
-        req.user._id;
+    wallet.stage3ReviewedBy = req.user._id;
+    wallet.stage3ReviewedAt = at;
+    wallet.stage3Comments = cleanNote;
 
-      wallet.failedAt =
-        at;
-
-      wallet.failureReason =
-        note.trim();
+    if (decision === "send_3b") {
+      wallet.stage3Decision = "send_3b";
+      wallet.stage3Substage = "3B";
 
       wallet.history.push({
-        type:
-          HISTORY_TYPES.STAGE3_REJECTED,
-
-        byUser:
-          req.user._id,
-
-        by:
-          req.user.name,
-
+        type: HISTORY_TYPES.STAGE3_SENT_TO_3B,
+        byUser: req.user._id,
+        by: req.user.name,
         at,
+        detail: `Admin ${req.user.name} sent the wallet from Stage 3A to Stage 3B.${cleanNote ? ` Note: ${cleanNote}` : ""}`,
+      });
+    }
 
-        detail:
-          `Stage 3 final approval rejected by Admin ${req.user.name}.${
-            note.trim()
-              ? ` Reason: ${note.trim()}`
-              : ""
-          }`,
+    if (decision === "successful") {
+      wallet.stage3Decision = "successful";
+      wallet.stage3Substage = "SUCCESSFUL";
+      wallet.stage = 3;
+      wallet.status = STATUSES.SUCCESSFUL;
+
+      wallet.history.push({
+        type: HISTORY_TYPES.STAGE3_APPROVED,
+        byUser: req.user._id,
+        by: req.user.name,
+        at,
+        detail: `Admin ${req.user.name} marked the wallet Successful directly from Stage 3A.${cleanNote ? ` Note: ${cleanNote}` : ""}`,
       });
     }
 
     await wallet.save();
 
-    const populated =
-      await populate(
-        Wallet.findById(
-          wallet._id
-        )
-      );
+    const populated = await populate(
+      Wallet.findById(wallet._id)
+    );
 
-    res.json({
+    return res.json({
       success: true,
-
-      wallet:
-        walletResponse(
-          populated
-        ),
+      message:
+        decision === "send_3b"
+          ? "Wallet moved from Stage 3A to Stage 3B."
+          : "Wallet is now Successful.",
+      wallet: walletResponse(populated),
     });
   } catch (error) {
     next(error);

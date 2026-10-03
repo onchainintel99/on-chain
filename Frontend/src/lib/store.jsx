@@ -16,6 +16,8 @@ import {
   adminOverviewRequest,
   strategyStatsRequest,
   leaderboardRequest,
+  earningsRequest,
+  addEarningRequest,
 
   walletsRequest,
   walletRequest,
@@ -164,6 +166,12 @@ export function DataProvider({
 getLeaderboard:
   leaderboardRequest,
 
+    /* Earnings / tiers */
+    getEarnings:
+      earningsRequest,
+
+    addEarning:
+      addEarningRequest,
 
     /* Wallets */
 
