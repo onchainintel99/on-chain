@@ -545,8 +545,21 @@ export default function WalletDetail() {
   const hasStage2Data =
     stage2Items.length > 0;
 
-  const allStage2CoinsApproved =
-    hasStage2Data && stage2Items.every((item) => item.status === "Approved");
+  // The final Stage 2 button is available when every submitted coin has
+  // been reviewed. Rejected coins do NOT block the wallet transition.
+  // Only Pending coins keep the wallet in Stage 2.
+  const allStage2CoinsReviewed =
+    hasStage2Data &&
+    stage2Items.every(
+      (item) =>
+        item.status === "Approved" ||
+        item.status === "Rejected"
+    );
+
+  const pendingStage2CoinCount =
+    stage2Items.filter(
+      (item) => item.status === "Pending"
+    ).length;
 
 
   const showStage2Actions =
@@ -1854,18 +1867,39 @@ export default function WalletDetail() {
           STAGE 3 ADMIN FINAL APPROVAL
       =================================================== */}
 
-            {role === "manager2" && wallet?.stage === 2 && wallet?.status === "Pending Stage 2" && allStage2CoinsApproved && (
-        <section className="panel">
-          <h2 className="panel__title">Stage 2 Final Approval</h2>
-          <p className="page__hint">
-            All submitted coins are approved. Manager 2 can now move this wallet to Stage 3A.
-            Individual coin approvals never move the wallet forward.
-          </p>
-          <button type="button" className="btn btn--success" disabled={loading} onClick={handleStage2FinalApproval}>
-            ✓ Manager 2: Approve Stage 2 → Stage 3A
-          </button>
-        </section>
-      )}
+            {["manager1", "manager2", "admin"].includes(role) &&
+  wallet?.stage === 2 &&
+  wallet?.status === "Pending Stage 2" &&
+  allStage2CoinsReviewed && (
+    <section className="panel">
+      <h2 className="panel__title">Stage 2 Final Approval</h2>
+      <p className="page__hint">
+        All submitted coins have been reviewed. Approved and rejected coins are both allowed.
+        Only pending coins block the move to Stage 3A.
+      </p>
+      <button
+        type="button"
+        className="btn btn--success"
+        disabled={loading}
+        onClick={handleStage2FinalApproval}
+      >
+        ✓ Approve to Stage 3A
+      </button>
+    </section>
+  )}
+
+{["manager1", "manager2", "admin"].includes(role) &&
+  wallet?.stage === 2 &&
+  wallet?.status === "Pending Stage 2" &&
+  hasStage2Data &&
+  !allStage2CoinsReviewed && (
+    <section className="panel">
+      <h2 className="panel__title">Stage 2 Review Pending</h2>
+      <p className="page__hint">
+        {pendingStage2CoinCount} coin(s) are still pending review. Approve or reject every submitted coin before moving this wallet to Stage 3A.
+      </p>
+    </section>
+  )}
 
 {showStage3Actions && (
 

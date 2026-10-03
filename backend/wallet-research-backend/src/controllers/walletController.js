@@ -1378,6 +1378,7 @@ async function stage2Decision(
       ![
         "approve",
         "reject",
+        "final_approve",
       ].includes(
         decision
       )
@@ -1417,10 +1418,10 @@ async function stage2Decision(
     // Final Stage 2 approval is a separate Manager 2 action.
     // Individual coin approvals never move the wallet to Stage 3.
     if (decision === "final_approve") {
-      if (req.user.role !== "manager2") {
+      if (!["manager1", "manager2", "admin"].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
-          message: "Only Manager 2 can move a wallet from Stage 2 to Stage 3.",
+          message: "Only Manager 1, Manager 2 and Admin can move a wallet from Stage 2 to Stage 3A.",
         });
       }
       if (wallet.stage !== 2 || wallet.status !== STATUSES.PENDING_STAGE2) {
@@ -1429,9 +1430,20 @@ async function stage2Decision(
       if (!Array.isArray(wallet.stage2Items) || wallet.stage2Items.length === 0) {
         return res.status(400).json({ success: false, message: "Add at least one coin before final Stage 2 approval." });
       }
-      const allApproved = wallet.stage2Items.every((coin) => coin.status === "Approved");
-      if (!allApproved) {
-        return res.status(400).json({ success: false, message: "Every submitted coin must be approved before moving to Stage 3." });
+      // Final Stage 2 approval requires every submitted coin to have a
+      // decision. Approved AND Rejected coins are both considered reviewed.
+      // Only Pending coins block the transition to Stage 3A.
+      const allReviewed = wallet.stage2Items.every(
+        (coin) => coin.status === "Approved" || coin.status === "Rejected"
+      );
+      if (!allReviewed) {
+        const pendingCount = wallet.stage2Items.filter(
+          (coin) => coin.status === "Pending"
+        ).length;
+        return res.status(400).json({
+          success: false,
+          message: `All Stage 2 coins must be reviewed before moving to Stage 3A. ${pendingCount} coin(s) are still pending.`,
+        });
       }
       const first = wallet.stage2Items[0];
       wallet.coinName = first.coinName;
@@ -1453,10 +1465,20 @@ async function stage2Decision(
       wallet.stage2Comments = String(note || "").trim();
       wallet.stage2Completed = true;
       wallet.stage2CompletedAt = new Date();
-      wallet.history.push({ type: HISTORY_TYPES.STAGE2_APPROVED, byUser: req.user._id, by: req.user.name, at: new Date(), detail: `Manager final-approved Stage 2. All ${wallet.stage2Items.length} coin(s) approved; wallet moved to Stage 3.` });
+      wallet.history.push({
+        type: HISTORY_TYPES.STAGE2_APPROVED,
+        byUser: req.user._id,
+        by: req.user.name,
+        at: new Date(),
+        detail: `${req.user.role} final-approved Stage 2. All ${wallet.stage2Items.length} coin(s) were reviewed; ${wallet.stage2Items.filter((coin) => coin.status === "Approved").length} approved and ${wallet.stage2Items.filter((coin) => coin.status === "Rejected").length} rejected. Wallet moved to Stage 3A.`,
+      });
       await wallet.save();
       const finalPopulated = await populate(Wallet.findById(wallet._id));
-      return res.json({ success: true, message: "Stage 2 final-approved. Wallet moved to Stage 3.", wallet: walletResponse(finalPopulated) });
+      return res.json({
+        success: true,
+        message: "Stage 2 final-approved. Wallet moved to Stage 3A.",
+        wallet: walletResponse(finalPopulated),
+      });
     }
 
     /* -----------------------------------------------------
