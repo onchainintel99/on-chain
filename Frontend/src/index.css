@@ -5915,3 +5915,78 @@ a, button, input, textarea, select,
   .dashboard-metric,
   .stat-card { transform: none !important; }
 }
+
+/* =========================================================
+   GENERIC .form-grid FIX
+   Earnings.jsx (and any other page) uses bare
+   <form className="form-grid"><label>Text<input/></label>…
+   with no wrapping ".stage2-form-panel", so it previously had
+   NO layout rules at all — label/input rendered inline, which
+   is the cramped "User [dropdown] Earning amount [input] ..."
+   row seen on the Earnings page. This gives `.form-grid` real
+   styling wherever it's used, without touching the more
+   specific `.stage2-form-panel .form-grid` rule above (which
+   still wins there via specificity).
+   ========================================================= */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 22px;
+  align-items: start;
+}
+
+.form-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.form-grid > label > .field__input,
+.form-grid > label > select,
+.form-grid > label > input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel-raised);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font-body);
+  font-weight: 400;
+  outline: none;
+}
+
+.form-grid > label > .field__input:focus,
+.form-grid > label > select:focus,
+.form-grid > label > input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(62, 123, 250, 0.16);
+}
+
+.form-grid > label > select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #7b879c 50%),
+                     linear-gradient(135deg, #7b879c 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+.form-grid .action-block__buttons {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
