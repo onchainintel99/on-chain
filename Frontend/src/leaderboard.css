@@ -884,3 +884,36 @@
     padding-right: 13px;
   }
 }
+
+/* =========================================================================
+   LEADERBOARD — polish pass (matches index.css site-wide upgrade)
+   ========================================================================= */
+
+.lb-stat,
+.lb-range,
+.lb-refresh {
+  transition: background 0.18s cubic-bezier(0.4,0,0.2,1),
+              border-color 0.18s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.2s cubic-bezier(0.4,0,0.2,1),
+              transform 0.2s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 10px 22px -14px rgba(0, 0, 0, 0.55);
+}
+
+.lb-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px -16px rgba(0, 0, 0, 0.6);
+}
+
+.lb-range:hover {
+  transform: translateY(-1px);
+}
+
+.lb-refresh:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .leaderboard-page {
+    animation: oci-fade-up 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  }
+}

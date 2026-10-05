@@ -321,6 +321,33 @@ export default function Login() {
 
           </div>
 
+
+          {/* Preview card */}
+
+          <div className="login-preview-card">
+
+            <div className="login-preview-card__top">
+              <span className="login-preview-card__label">Wallet Queue</span>
+              <span className="login-preview-card__dot" />
+            </div>
+
+            <div className="login-preview-card__row">
+              <span>Stage 1 reviews pending</span>
+              <b>12</b>
+            </div>
+
+            <div className="login-preview-card__row">
+              <span>Stage 2 approvals pending</span>
+              <b>05</b>
+            </div>
+
+            <div className="login-preview-card__row">
+              <span>Approved this week</span>
+              <b>38</b>
+            </div>
+
+          </div>
+
         </div>
 
       </section>
