@@ -101,9 +101,9 @@ export default function Statistics() {
     setLoading(true);
     setError("");
     try {
-      // Fetch wallets whose current workflow stage is Stage 2. Each wallet/trade ID
+      // Fetch wallets whose current workflow stage is Stage 3. Each wallet/trade ID
       // gets its own card and its own coin distribution; there are no global totals.
-      const response = await getWallets("stage=2&limit=500&page=1");
+      const response = await getWallets("stage=3&limit=500&page=1");
       const result = Array.isArray(response?.wallets)
         ? response.wallets
         : Array.isArray(response?.data?.wallets)
@@ -112,7 +112,7 @@ export default function Statistics() {
       setWallets(result);
       setExpandedId((current) => result.some((wallet) => walletKey(wallet) === current) ? current : "");
     } catch (err) {
-      setError(err?.message || "Unable to load Stage 2 trade IDs.");
+      setError(err?.message || "Unable to load Stage 3 trade IDs.");
     } finally {
       setLoading(false);
     }
@@ -137,9 +137,9 @@ export default function Statistics() {
     <div className="page">
       <div className="page__header">
         <div>
-          <h1 className="page__title">Stage 2 Statistics</h1>
+          <h1 className="page__title">Stage 3 Statistics</h1>
           <p className="page__subtitle">
-            Each Trade ID has its own coin count, strategy distribution, and coin details. Select View to inspect that Trade ID only.
+            Each Stage 3 Trade ID has its own coin count, User Strategy and Trader Strategy distribution, and coin details. Select View to inspect that Trade ID only.
           </p>
         </div>
         <button type="button" className="btn btn--primary" onClick={load} disabled={loading}>
@@ -149,9 +149,9 @@ export default function Statistics() {
 
       {error && <p className="form-error" role="alert">{error}</p>}
       {loading ? (
-        <div className="empty-state">Loading Stage 2 Trade IDs…</div>
+        <div className="empty-state">Loading Stage 3 Trade IDs…</div>
       ) : tradeCards.length === 0 ? (
-        <div className="empty-state">No wallets are currently in Stage 2.</div>
+        <div className="empty-state">No wallets are currently in Stage 3.</div>
       ) : (
         <div className="stage2-wallet-stats-list">
           {tradeCards.map((card) => {
