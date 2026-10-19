@@ -203,8 +203,8 @@ function strategyClass(
 const STAGE2_STAT_COLUMNS = [
   ["below0", "Below 0"],
   ["zero", "0"],
-  ["0to50", "0–50"],
-  ["51to100", "51–100"],
+  ["0to49", "0–49"],
+  ["50to100", "50–100"],
   ["above100", "Above 100"],
 ];
 
@@ -219,8 +219,8 @@ function createEmptyStrategyStats() {
   return {
     below0: 0,
     zero: 0,
-    "0to50": 0,
-    "51to100": 0,
+    "0to49": 0,
+    "50to100": 0,
     above100: 0,
   };
 }
@@ -236,8 +236,8 @@ function calculateWalletStrategyStats(items) {
 
     if (number < 0) stats.below0 += 1;
     else if (number === 0) stats.zero += 1;
-    else if (number <= 50) stats["0to50"] += 1;
-    else if (number <= 100) stats["51to100"] += 1;
+    else if (number < 50) stats["0to49"] += 1;
+    else if (number <= 100) stats["50to100"] += 1;
     else stats.above100 += 1;
   };
 
@@ -1487,8 +1487,8 @@ export default function WalletDetail() {
 
         <p className="stage2-strategy-stats-note">
           Counts are calculated only from this wallet's Stage 2 coin entries.
-          Negative values are Below 0, zero is 0, 0–50 is above 0 through 50,
-          51–100 is above 50 through 100, and Above 100 is greater than 100.
+          Negative values are Below 0, zero is 0, 0–49 is above 0 and below 50,
+          50–100 includes 50 through 100, and Above 100 is greater than 100.
         </p>
 
       </section>
