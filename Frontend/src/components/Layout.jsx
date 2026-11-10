@@ -125,18 +125,10 @@ export default function Layout() {
 
   /* =========================================================
      ADD WALLET
-     
-     ONLY NORMAL USER
-     
-     User       ✅
-     Manager 1  ❌
-     Manager 2  ❌
-     Admin      ❌
+     Normal users and both manager roles can create wallets.
   ========================================================= */
 
-  if (
-    role === "user"
-  ) {
+  if (["user", "manager1", "manager2"].includes(role)) {
 
     navigation.push({
 

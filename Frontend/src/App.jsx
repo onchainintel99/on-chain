@@ -97,14 +97,12 @@ export default function App() {
               element={<Earnings />}
             />
 
-            {/* =================================================
-                ONLY NORMAL USER CAN CREATE WALLET
-            ================================================= */}
+            {/* Users and managers can create wallets. */}
 
             <Route
               path="/create-wallet"
               element={
-                <RequireRole roles={["user"]}>
+                <RequireRole roles={["user", "manager1", "manager2"]}>
                   <CreateWallet />
                 </RequireRole>
               }

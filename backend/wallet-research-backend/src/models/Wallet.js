@@ -150,6 +150,14 @@ const walletSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Identifies manager-published wallets that are visible to all normal users.
+    createdByRole: {
+      type: String,
+      enum: ["user", "manager1", "manager2", "admin"],
+      default: "user",
+      index: true,
+    },
+
     // =================================================
     // WORKFLOW
     // =================================================

@@ -349,10 +349,13 @@ async function listWallets(
       }
     }
 
-    // Users may only list wallets they own, including Stage 2 wallets.
+    // Users can see their own wallets plus wallets published by managers.
     // Managers and admins retain visibility across all users' wallets.
     if (req.user.role === "user") {
-      filter.userId = req.user._id;
+      filter.$or = [
+        { userId: req.user._id },
+        { createdByRole: { $in: ["manager1", "manager2"] } },
+      ];
     }
 
     if (
@@ -368,7 +371,7 @@ async function listWallets(
       const q =
         search.trim();
 
-      filter.$or = [
+      const searchConditions = [
         {
           coinName: {
             $regex: q,
@@ -388,6 +391,12 @@ async function listWallets(
           },
         },
       ];
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: searchConditions }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchConditions;
+      }
     }
 
     const safeLimit =
@@ -502,8 +511,10 @@ async function getWallet(
       const ownWallet =
         ownerId ===
         req.user._id.toString();
+      const managerPublished =
+        ["manager1", "manager2"].includes(wallet.createdByRole);
 
-      if (!ownWallet) {
+      if (!ownWallet && !managerPublished) {
         return res.status(403).json({
           success: false,
           message:
@@ -535,13 +546,10 @@ async function createWallet(
   next
 ) {
   try {
-    if (
-      req.user.role !== "user"
-    ) {
+    if (!["user", "manager1", "manager2"].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message:
-          "Only normal users can create wallets",
+        message: "Only normal users and managers can create wallets",
       });
     }
 
@@ -600,6 +608,8 @@ async function createWallet(
 
         userId:
           req.user._id,
+
+        createdByRole: req.user.role,
 
         stage: 1,
 

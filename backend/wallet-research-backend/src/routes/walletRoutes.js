@@ -35,13 +35,13 @@ router.get(
  * =========================================================
  * CREATE WALLET
  *
- * USER ONLY
+ * NORMAL USERS AND MANAGERS
  * =========================================================
  */
 
 router.post(
   "/",
-  requireRole("user"),
+  requireRole("user", "manager1", "manager2"),
   createWallet
 );
 
@@ -82,7 +82,7 @@ router.post(
  * =========================================================
  * STAGE 2 COIN SUBMISSION
  *
- * USER ONLY
+ * NORMAL USERS AND MANAGERS
  *
  * IMPORTANT:
  *

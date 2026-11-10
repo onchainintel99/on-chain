@@ -185,7 +185,7 @@ export default function Wallets() {
           </p>
         </div>
 
-        {currentUser?.role === "user" && (
+        {["user", "manager1", "manager2"].includes(currentUser?.role) && (
           <Link
             to="/create-wallet"
             className="btn btn--primary"

@@ -102,13 +102,9 @@ export default function Dashboard() {
       return data.successful || 0;
     };
 
-  /*
-   * ONLY USER CAN CREATE WALLET
-   */
-
+  /* Normal users and managers can create wallets. */
   const canCreateWallet =
-    currentUser?.role ===
-    "user";
+    ["user", "manager1", "manager2"].includes(currentUser?.role);
 
   return (
     <div className="page">
@@ -139,7 +135,7 @@ export default function Dashboard() {
         </div>
 
         {/* =================================================
-            ONLY USER GETS ADD WALLET
+            USERS AND MANAGERS GET ADD WALLET
         ================================================= */}
 
         {canCreateWallet && (
